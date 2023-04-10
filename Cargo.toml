@@ -1,0 +1,13 @@
+[package]
+name = "doctor-vision"
+version = "0.1.0"
+edition = "2021"
+
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+cloud-vision-flows = "0.1.1"
+lambda-flows = "0.2.2"
