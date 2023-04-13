@@ -10,7 +10,7 @@ pub fn run() {
 
     let crustaceans = "https://rustacean.net/assets/rustacean-orig-noshadow.png";
     let url = Url::try_from(crustaceans).unwrap();
-
+//rebuild
     listen_to_update(telegram_token, |update| {
         _ = tele.send_photo(ChatId(6221995180), InputFile::url(url));
 
