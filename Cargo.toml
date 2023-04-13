@@ -11,3 +11,5 @@ crate-type = ["cdylib"]
 [dependencies]
 cloud-vision-flows = "0.1.1"
 lambda-flows = "0.2.2"
+tg-flows = "0.1.9"
+url = "2.3.1"
