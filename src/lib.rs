@@ -1,6 +1,6 @@
 use cloud_vision_flows::text_detection;
 use lambda_flows::{request_received, send_response};
-use tg_flows::{ChatId, InputFile, Telegram};
+use tg_flows::{ChatId, InputFile, Telegram, listen_to_update, UpdateKind};
 use url::Url;
 
 #[no_mangle]
@@ -11,13 +11,16 @@ pub fn run() {
     let crustaceans = "https://rustacean.net/assets/rustacean-orig-noshadow.png";
     let url = Url::try_from(crustaceans).unwrap();
 
-    _ = tele.send_photo(ChatId(6221995180), InputFile::url(url));
-    // listen_to_update(telegram_token, |update| {
-    //     if let UpdateKind::Message(msg) = update.kind {
-    //         let mut text = msg.text().unwrap_or("");
-    //         let chat_id = msg.chat.id;
-    //     }
-    // });
+    listen_to_update(telegram_token, |update| {
+        _ = tele.send_photo(ChatId(6221995180), InputFile::url(url));
+
+        if let UpdateKind::Message(msg) = update.kind {
+            let mut text = msg.text().unwrap_or("");
+            let chat_id = msg.chat.id;
+        }
+
+
+    });
 
     // request_received(|_qry, body| {
     //     let text = text_detection(String::from_utf8(body).unwrap());
