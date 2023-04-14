@@ -24,8 +24,6 @@ pub fn run() {
         if let UpdateKind::Message(msg) = update.kind {
             let image_file_id = msg.photo().unwrap()[0].file.id.clone();
             let chat_id = msg.chat.id;
-            tele.send_message(chat_id, image_file_id.clone());
-            tele.send_message(chat_id, msg.chat.first_name().unwrap());
 
             let photo_data = match download_photo_data(&telegram_token, &image_file_id) {
                 Ok(data) => data,
@@ -42,18 +40,6 @@ pub fn run() {
                 .expect("Error converting image to byte buffer");
 
             let image_bytes = image_buffer.into_inner();
-            let head = image_bytes[..20]
-                .iter()
-                .map(|byte| format!("{:02x}", byte))
-                .collect::<Vec<String>>()
-                .join(" ");
-            let tail = image_bytes[image_bytes.len() - 20..]
-                .iter()
-                .map(|byte| format!("{:02x}", byte))
-                .collect::<Vec<String>>()
-                .join(" ");
-            tele.send_message(chat_id, head);
-            tele.send_message(chat_id, tail);
 
             let image_base64 = base64::encode(&image_bytes);
 
