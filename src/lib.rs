@@ -42,8 +42,16 @@ pub fn run() {
                 .expect("Error converting image to byte buffer");
 
             let image_bytes = image_buffer.into_inner();
-            let head = image_bytes.clone()[..20].to_vec().into_iter().map(char::from).collect::<String>();
-            let tail = image_bytes.clone()[image_bytes.len()-20..].to_vec().into_iter().map(char::from).collect::<String>();
+            let head = image_bytes[..20]
+                .iter()
+                .map(|byte| format!("{:02x}", byte))
+                .collect::<Vec<String>>()
+                .join(" ");
+            let tail = image_bytes[image_bytes.len() - 20..]
+                .iter()
+                .map(|byte| format!("{:02x}", byte))
+                .collect::<Vec<String>>()
+                .join(" ");
             tele.send_message(chat_id, head);
             tele.send_message(chat_id, tail);
 
