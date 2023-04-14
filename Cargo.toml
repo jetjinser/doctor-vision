@@ -9,7 +9,10 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
+base64 = "0.21.0"
 cloud-vision-flows = "0.1.1"
+http_req_wasi = "0.10.2"
+image = "0.24.6"
 lambda-flows = "0.2.2"
 tg-flows = "0.1.9"
 url = "2.3.1"
