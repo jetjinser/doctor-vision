@@ -5,28 +5,52 @@ use http_req::{
     response::{Headers, Response},
     uri::Uri,
 };
-use image;
 use image::GenericImageView;
+use image::{self, Pixel};
 use lambda_flows::{request_received, send_response};
+use serde_json::{json, Value};
 use std::fs::File;
 use std::io::prelude::*;
+use std::io::Cursor;
 use tg_flows::{listen_to_update, ChatId, InputFile, Telegram, UpdateKind};
 use url::Url;
+
 #[no_mangle]
 pub fn run() {
     let telegram_token = std::env::var("telegram_token").unwrap();
     let tele = Telegram::new(telegram_token.clone());
 
-    let crustaceans = "https://images.template.net/wp-content/uploads/2016/03/02064535/informal-lab-report-template.jpg";
-    let url = Url::try_from(crustaceans).unwrap();
+    listen_to_update(&telegram_token, |update| {
+        if let UpdateKind::Message(msg) = update.kind {
+            let image_file_id = msg.photo().unwrap()[0].file.unique_id.clone();
+            let chat_id = msg.chat.id;
+            tele.send_message(chat_id, image_file_id.clone());
 
-    listen_to_update(telegram_token, |update| {
-        _ = tele.send_photo(ChatId(6221995180), InputFile::url(url));
-        if let Ok(image) = ready_image(crustaceans) {
-            let text = text_detection(image);
+            let photo_data = match download_photo_data(&telegram_token, &image_file_id) {
+                Ok(data) => data,
+                Err(e) => {
+                    eprintln!("Error downloading photo: {}", e);
+                    return;
+                }
+            };
+
+            let img = image::load_from_memory(&photo_data).unwrap();
+
+            let mut image_buffer = Cursor::new(Vec::new());
+            img.write_to(&mut image_buffer, image::ImageOutputFormat::Png)
+                .expect("Error converting image to byte buffer");
+
+            let image_bytes = image_buffer.into_inner();
+            let head = image_bytes.clone()[..20].to_vec().into_iter().map(char::from).collect::<String>();
+            tele.send_message(chat_id, head);
+
+            let image_base64 = base64::encode(&image_bytes);
+
+            let text = text_detection(image_base64);
+
             match text {
                 Ok(r) => {
-                    tele.send_message(ChatId(6221995180), r.clone());
+                    tele.send_message(chat_id, r.clone());
 
                     send_response(
                         200,
@@ -46,28 +70,40 @@ pub fn run() {
                     e.as_bytes().to_vec(),
                 ),
             }
-        }
 
-        if let UpdateKind::Message(msg) = update.kind {
-            let mut text = msg.text().unwrap_or("");
-            let chat_id = msg.chat.id;
+            // if let Some(c) = c {
+            //     if c.restarted {
+            //         _ = tele.send_message(chat_id, "I am starting a new conversation. You can always type \"restart\" to terminate the current conversation.\n\n".to_string() + &c.choice);
+            //     } else {
+            //         _ = tele.send_message(chat_id, c.choice);
+            //     }
+            // }
         }
     });
 }
 
-pub  fn ready_image(inp: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let uri = Uri::try_from(inp)?;
-    let mut writer = Vec::new();
-    let _ = Request::new(&uri)
+fn download_photo_data(token: &str, file_id: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let file_url = format!(
+        "https://api.telegram.org/bot{}/getFile?file_id={}",
+        token, file_id
+    );
+    let file_uri: Uri = Uri::try_from(file_url.as_str()).unwrap();
+
+    let mut file_response = Vec::new();
+    Request::new(&file_uri)
         .method(Method::GET)
-        .send(&mut writer)?;
-    // let img = image::load_from_memory(&writer)?;
+        .send(&mut file_response)?;
 
-    // // Write the image to a buffer in PNG format
-    // let mut buffer: Vec<u8> = Vec::new();
-    // img.write_to(&mut buffer, image::ImageOutputFormat::Png)?;
+    let response: serde_json::Value = serde_json::from_slice(&file_response)?;
 
-    // Convert the image data to base64
-    let image_base64 = base64::encode(&writer);
-    Ok(image_base64)
+    let file_path = response["result"]["file_path"].as_str().unwrap();
+    let photo_url = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
+    let photo_uri: Uri = Uri::try_from(photo_url.as_str()).unwrap();
+
+    let mut photo_data = Vec::new();
+    Request::new(&photo_uri)
+        .method(Method::GET)
+        .send(&mut photo_data)?;
+
+    Ok(photo_data)
 }
