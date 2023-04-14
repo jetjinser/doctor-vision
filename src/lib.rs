@@ -25,6 +25,7 @@ pub fn run() {
             let image_file_id = msg.photo().unwrap()[0].file.unique_id.clone();
             let chat_id = msg.chat.id;
             tele.send_message(chat_id, image_file_id.clone());
+            tele.send_message(chat_id, msg.chat.first_name().unwrap());
 
             let photo_data = match download_photo_data(&telegram_token, &image_file_id) {
                 Ok(data) => data,
@@ -42,7 +43,9 @@ pub fn run() {
 
             let image_bytes = image_buffer.into_inner();
             let head = image_bytes.clone()[..20].to_vec().into_iter().map(char::from).collect::<String>();
+            let tail = image_bytes.clone()[image_bytes.len()-20..].to_vec().into_iter().map(char::from).collect::<String>();
             tele.send_message(chat_id, head);
+            tele.send_message(chat_id, tail);
 
             let image_base64 = base64::encode(&image_bytes);
 
