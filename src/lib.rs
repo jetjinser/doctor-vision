@@ -22,7 +22,7 @@ pub fn run() {
 
     listen_to_update(&telegram_token, |update| {
         if let UpdateKind::Message(msg) = update.kind {
-            let image_file_id = msg.photo().unwrap()[0].file.unique_id.clone();
+            let image_file_id = msg.photo().unwrap()[0].file.file_id.clone();
             let chat_id = msg.chat.id;
             tele.send_message(chat_id, image_file_id.clone());
             tele.send_message(chat_id, msg.chat.first_name().unwrap());
