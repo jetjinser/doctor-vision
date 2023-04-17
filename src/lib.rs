@@ -56,7 +56,7 @@ pub fn run() {
                         ),
                     }
                 }
-               Err(e)  => {
+                Err(e) => {
                     eprintln!("Error downloading photo");
                     return;
                 }
@@ -101,7 +101,20 @@ pub fn download_photo_data_base64(
         .method(Method::GET)
         .send(&mut file_response)?;
 
-    let base64_encoded = base64::encode(file_response);
+    let file_info: Value = serde_json::from_slice(&file_response)?;
+    let file_path = file_info["result"]["file_path"]
+        .as_str()
+        .ok_or("file_path missing")?;
+
+    // Download the file using the file path
+    let file_download_url = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
+    let file_download_uri: Uri = Uri::try_from(file_download_url.as_str()).unwrap();
+
+    let mut file_data = Vec::new();
+    Request::new(&file_download_uri)
+        .method(Method::GET)
+        .send(&mut file_data)?;
+    let base64_encoded = base64::encode(file_data);
 
     Ok(base64_encoded)
 }
