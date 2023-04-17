@@ -24,11 +24,12 @@ pub fn run() {
                     if let Ok(ocr) = text_detection(data) {
                         let mut text = if !ocr.is_empty() { ocr } else { "".to_string() };
 
-                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report";
+                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please avoid using [patient] to address the user";
                         let co = ChatOptions {
                             // model: ChatModel::GPT4,
                             model: ChatModel::GPT35Turbo,
-                            restart: text.eq_ignore_ascii_case("restart"),
+                            restart: false,
+                            // restart: text.eq_ignore_ascii_case("restart"),
                             system_prompt: Some(system),
                             retry_times: 3,
                         };
@@ -37,7 +38,7 @@ pub fn run() {
 
                         if let Some(c) = c {
                             if c.restarted {
-                                _ = tele.send_message(chat_id, "I am starting a new conversation. You can always type \"restart\" to terminate the current conversation.\n\n".to_string() + &c.choice);
+                                // _ = tele.send_message(chat_id, "I am starting a new session. You can always type \"restart\" to terminate the current session.\n\n".to_string() + &c.choice);
                             } else {
                                 _ = tele.send_message(chat_id, c.choice);
                             }
