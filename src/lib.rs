@@ -24,7 +24,7 @@ pub fn run() {
                     if let Ok(ocr) = text_detection(data) {
                         let mut text = if !ocr.is_empty() { ocr } else { "".to_string() };
 
-                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please avoid using [patient] to address the user";
+                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please never address the user by any means, just talk about the report";
                         let co = ChatOptions {
                             // model: ChatModel::GPT4,
                             model: ChatModel::GPT35Turbo,
