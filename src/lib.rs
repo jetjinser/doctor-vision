@@ -27,6 +27,7 @@ pub fn run() {
             let image_file_id = msg.document().unwrap().file.id.clone();
             // let image_file_id = msg.photo().unwrap()[0].file.id.clone();
             let chat_id = msg.chat.id;
+            tele.send_message(chat_id, image_file_id.clone());
 
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
