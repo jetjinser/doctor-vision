@@ -37,7 +37,11 @@ pub fn run() {
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
                     if let Ok(ocr_text) = text_detection(data) {
-                        let mut text = if !ocr_text.is_empty() { ocr_text } else { "".to_string() };
+                        let mut text = if !ocr_text.is_empty() {
+                            ocr_text
+                        } else {
+                            "".to_string()
+                        };
 
                         let system = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
                         1) [the name of the measurement] [status of the reading]
@@ -46,7 +50,7 @@ pub fn run() {
                         let co = ChatOptions {
                             // model: ChatModel::GPT4,
                             model: ChatModel::GPT35Turbo,
-                            restart: false,
+                            restart: true,
                             // restart: text.eq_ignore_ascii_case("restart"),
                             system_prompt: Some(system),
                             retry_times: 3,
@@ -68,14 +72,6 @@ pub fn run() {
                     return;
                 }
             };
-
-            // if let Some(c) = c {
-            //     if c.restarted {
-            //         _ = tele.send_message(chat_id, "I am starting a new conversation. You can always type \"restart\" to terminate the current conversation.\n\n".to_string() + &c.choice);
-            //     } else {
-            //         _ = tele.send_message(chat_id, c.choice);
-            //     }
-            // }
         }
     });
 }
