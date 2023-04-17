@@ -15,7 +15,14 @@ pub fn run() {
 
     listen_to_update(&telegram_token, |update| {
         if let UpdateKind::Message(msg) = update.kind {
-            let image_file_id = msg.document().unwrap().file.id.clone();
+            let image_file_id = match (msg.document().is_some(), msg.photo().is_some()) {
+                (true, false) => msg.document().unwrap().file.id.clone(),
+                (false, true) => msg.photo().unwrap().last().unwrap().file.id.clone(),
+                (_, _) => {
+                    return;
+                }
+            };
+
             let chat_id = msg.chat.id;
             let openai_key_name = "jaykchen";
 
