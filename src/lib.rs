@@ -2,61 +2,49 @@ use base64;
 use cloud_vision_flows::text_detection;
 use http_req::{
     request::{Method, Request},
-    response::{Headers, Response},
     uri::Uri,
 };
-use image::{self, Pixel};
-use lambda_flows::{request_received, send_response};
-use serde_json::{json, Value};
+use openai_flows::{chat_completion, ChatModel, ChatOptions};
+use serde_json::Value;
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::Cursor;
-use tg_flows::{listen_to_update, ChatId, InputFile, Telegram, UpdateKind};
-
+use tg_flows::{listen_to_update, Telegram, UpdateKind};
 #[no_mangle]
 pub fn run() {
     let telegram_token = std::env::var("telegram_token").unwrap();
     let tele = Telegram::new(telegram_token.clone());
-    // let file_path = "~/Downloads/lab_report_part.jpg"; // Replace with the path to your image file
-
-    // send_photo_as_document(&bot, chat_id, file_path).await;
 
     listen_to_update(&telegram_token, |update| {
         if let UpdateKind::Message(msg) = update.kind {
             let image_file_id = msg.document().unwrap().file.id.clone();
-            // let image_file_id = msg.photo().unwrap()[0].file.id.clone();
             let chat_id = msg.chat.id;
-            tele.send_message(chat_id, image_file_id.clone());
+            let openai_key_name = "jaykchen";
 
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
-                    let text = text_detection(data);
+                    if let Ok(ocr) = text_detection(data) {
+                        let mut text = if ocr { ocr } else { "".to_string() };
 
-                    match text {
-                        Ok(r) => {
-                            tele.send_message(chat_id, r.clone());
+                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report";
+                        let co = ChatOptions {
+                            // model: ChatModel::GPT4,
+                            model: ChatModel::GPT35Turbo,
+                            restart: text.eq_ignore_ascii_case("restart"),
+                            system_prompt: Some(system),
+                            retry_times: 3,
+                        };
 
-                            send_response(
-                                200,
-                                vec![(
-                                    String::from("content-type"),
-                                    String::from("text/plain; charset=UTF-8"),
-                                )],
-                                r.as_bytes().to_vec(),
-                            );
+                        let c = chat_completion(&openai_key_name, &chat_id.to_string(), &text, &co);
+
+                        if let Some(c) = c {
+                            if c.restarted {
+                                _ = tele.send_message(chat_id, "I am starting a new conversation. You can always type \"restart\" to terminate the current conversation.\n\n".to_string() + &c.choice);
+                            } else {
+                                _ = tele.send_message(chat_id, c.choice);
+                            }
                         }
-                        Err(e) => send_response(
-                            500,
-                            vec![(
-                                String::from("content-type"),
-                                String::from("text/plain; charset=UTF-8"),
-                            )],
-                            e.as_bytes().to_vec(),
-                        ),
                     }
                 }
-                Err(e) => {
+                Err(_e) => {
                     eprintln!("Error downloading photo");
                     return;
                 }
@@ -73,19 +61,6 @@ pub fn run() {
     });
 }
 
-// async fn send_photo_as_document(bot: &Bot, chat_id: i64, file_path: &str) {
-//     let input_file = teloxide::types::InputFile::File {
-//         media: teloxide::types::MediaFile::from_file(file_path),
-//         file_name: Some(String::from(file_path)),
-//         thumb: None,
-//     };
-
-//     let document = teloxide::types::InputMediaDocument::new(input_file);
-
-//     if let Err(e) = bot.send_document(chat_id, document).send().await {
-//         eprintln!("Error while sending the document: {}", e);
-//     }
-// }
 pub fn download_photo_data_base64(
     token: &str,
     file_id: &str,
