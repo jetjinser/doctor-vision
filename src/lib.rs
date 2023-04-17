@@ -22,7 +22,7 @@ pub fn run() {
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
                     if let Ok(ocr) = text_detection(data) {
-                        let mut text = if ocr { ocr } else { "".to_string() };
+                        let mut text = if !ocr.is_empty() { ocr } else { "".to_string() };
 
                         let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report";
                         let co = ChatOptions {
