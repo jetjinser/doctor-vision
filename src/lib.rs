@@ -15,6 +15,17 @@ pub fn run() {
 
     listen_to_update(&telegram_token, |update| {
         if let UpdateKind::Message(msg) = update.kind {
+            let chat_id = msg.chat.id;
+            let openai_key_name = "jaykchen";
+
+            if let Some(text) = msg.text() {
+                if text == "/start" {
+                    let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
+                    let _ = tele.send_message(chat_id, init_message.to_string());
+                    return;
+                }
+            }
+
             let image_file_id = match (msg.document().is_some(), msg.photo().is_some()) {
                 (true, false) => msg.document().unwrap().file.id.clone(),
                 (false, true) => msg.photo().unwrap().last().unwrap().file.id.clone(),
@@ -23,15 +34,15 @@ pub fn run() {
                 }
             };
 
-            let chat_id = msg.chat.id;
-            let openai_key_name = "jaykchen";
-
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
-                    if let Ok(ocr) = text_detection(data) {
-                        let mut text = if !ocr.is_empty() { ocr } else { "".to_string() };
+                    if let Ok(ocr_text) = text_detection(data) {
+                        let mut text = if !ocr_text.is_empty() { ocr_text } else { "".to_string() };
 
-                        let system = "You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please never address the user by any means, just talk about the report";
+                        let system = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
+                        1) [the name of the measurement] [status of the reading]
+                        ...
+                        one sentence summary about the subject's health status."#;
                         let co = ChatOptions {
                             // model: ChatModel::GPT4,
                             model: ChatModel::GPT35Turbo,
