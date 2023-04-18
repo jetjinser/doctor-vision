@@ -37,7 +37,7 @@ pub fn run() {
             match download_photo_data_base64(&telegram_token, &image_file_id) {
                 Ok(data) => {
                     if let Ok(ocr_text) = text_detection(data) {
-                        let mut text = if !ocr_text.is_empty() {
+                        let text = if !ocr_text.is_empty() {
                             ocr_text
                         } else {
                             "".to_string()
