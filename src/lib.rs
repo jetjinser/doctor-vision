@@ -50,7 +50,7 @@ pub fn run() {
                         let co = ChatOptions {
                             // model: ChatModel::GPT4,
                             model: ChatModel::GPT35Turbo,
-                            restart: true,
+                            restart: false,
                             // restart: text.eq_ignore_ascii_case("restart"),
                             system_prompt: Some(system),
                             retry_times: 3,
