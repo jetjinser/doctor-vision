@@ -30,20 +30,25 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         if let Some(text) = msg.text() {
             if text == "/start" {
                 let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
-                let _ = tele.send_message(chat_id, init_message.to_string());
+                _ = tele.send_message(chat_id, init_message.to_string());
                 return;
             }
         }
 
         // TODO: check msg type when user upload photo *file*(s)
 
+        _ = tele.send_message(chat_id, "please waiting...");
+
         let image_file_id = match (msg.document().is_some(), msg.photo().is_some()) {
             (true, false) => msg.document().unwrap().file.id.clone(),
             (false, true) => msg.photo().unwrap().last().unwrap().file.id.clone(),
             (_, _) => {
+                _ = tele.send_message(chat_id, "not doc either photo");
                 return;
             }
         };
+
+        _ = tele.send_message(chat_id, format!("{:?}", msg.kind));
 
         match download_photo_data_base64(&telegram_token, &image_file_id) {
             Ok(data) => {
