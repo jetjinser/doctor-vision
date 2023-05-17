@@ -48,7 +48,7 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             }
         };
 
-        _ = tele.send_message(chat_id, format!("{:?}", msg.kind));
+        _ = tele.send_message(chat_id, format!("{:?}", serde_json::to_string(&msg)));
 
         match download_photo_data_base64(&telegram_token, &image_file_id) {
             Ok(data) => {
