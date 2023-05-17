@@ -25,6 +25,19 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
     if let UpdateKind::Message(msg) = update.kind {
         let chat_id = msg.chat.id;
 
+        let system = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
+                        1) [the name of the measurement] [status of the reading]
+                        ...
+                        one sentence summary about the subject's health status."#;
+        let co = ChatOptions {
+            // model: ChatModel::GPT4,
+            model: ChatModel::GPT35Turbo,
+            restart: false,
+            // restart: text.eq_ignore_ascii_case("restart"),
+            system_prompt: Some(system),
+            retry_times: 3,
+        };
+
         let tele = Telegram::new(telegram_token.clone());
 
         if let Some(text) = msg.text() {
@@ -32,27 +45,33 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                 let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
                 _ = tele.send_message(chat_id, init_message.to_string());
                 return;
+            } else {
+                let c = chat_completion(&openai_key_name, &chat_id.to_string(), &text, &co);
+                if let Some(text) = c {
+                    _ = tele.send_message(chat_id, text.choice);
+                }
             }
         }
-
-        // TODO: check msg type when user upload photo *file*(s)
 
         _ = tele.send_message(chat_id, "please waiting...");
 
         let image_file_id = match (msg.document().is_some(), msg.photo().is_some()) {
             (true, false) => msg.document().unwrap().file.id.clone(),
             (false, true) => msg.photo().unwrap().last().unwrap().file.id.clone(),
-            (_, _) => {
-                _ = tele.send_message(chat_id, "not doc either photo");
-                return;
-            }
+            (_, _) => return,
         };
 
-        _ = tele.send_message(chat_id, format!("{:?}", serde_json::to_string(&msg)));
+        _ = tele.send_message(
+            chat_id,
+            format!(
+                "{}",
+                serde_json::to_string(&msg).unwrap_or("...".to_string())
+            ),
+        );
 
         match download_photo_data_base64(&telegram_token, &image_file_id) {
             Ok(data) => {
-                let c = doctor(data, openai_key_name, chat_id);
+                let c = doctor(data, openai_key_name, chat_id, co);
                 if let Some(c) = c {
                     if c.restarted {
                         // _ = tele.send_message(chat_id, "I am starting a new session. You can always type \"restart\" to terminate the current session.\n\n".to_string() + &c.choice);
@@ -105,25 +124,17 @@ fn download_photo_data_base64(
 // }}}
 
 // {{{ doctor
-fn doctor(data: String, openai_key_name: String, chat_id: ChatId) -> Option<ChatResponse> {
+fn doctor(
+    data: String,
+    openai_key_name: String,
+    chat_id: ChatId,
+    co: ChatOptions,
+) -> Option<ChatResponse> {
     if let Ok(ocr_text) = text_detection(data) {
         let text = if !ocr_text.is_empty() {
             ocr_text
         } else {
             "".to_string()
-        };
-
-        let system = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
-                        1) [the name of the measurement] [status of the reading]
-                        ...
-                        one sentence summary about the subject's health status."#;
-        let co = ChatOptions {
-            // model: ChatModel::GPT4,
-            model: ChatModel::GPT35Turbo,
-            restart: false,
-            // restart: text.eq_ignore_ascii_case("restart"),
-            system_prompt: Some(system),
-            retry_times: 3,
         };
 
         chat_completion(&openai_key_name, &chat_id.to_string(), &text, &co)
