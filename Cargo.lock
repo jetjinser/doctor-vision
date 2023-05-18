@@ -218,6 +218,7 @@ dependencies = [
  "http_req_wasi",
  "image",
  "lambda-flows",
+ "once_cell",
  "openai-flows",
  "serde",
  "serde_json",

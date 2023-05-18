@@ -1,0 +1,50 @@
+use base64::{engine::general_purpose, Engine};
+use http_req::{
+    request::{Method, Request},
+    uri::Uri,
+};
+
+use crate::App;
+
+impl App {
+    pub fn send_msg<S>(&self, text: S)
+    where
+        S: Into<String>,
+    {
+        // ignored
+        _ = self.tele.send_message(self.msg.chat.id, text);
+    }
+
+    pub fn reply_msg<S>(&self, _text: S)
+    where
+        S: Into<String>,
+    {
+        // need to update sdk
+    }
+
+    pub fn download_photo_data_base64(
+        &self,
+        file_id: String,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let file = self.tele.get_file(file_id)?;
+        let file_path = file.path;
+
+        // need to update sdk
+        // let file_data = self.tele.download_file(file_path);
+
+        // Download the file using the file path
+        let file_download_url = format!(
+            "https://api.telegram.org/file/bot{}/{}",
+            self.tele_token, file_path
+        );
+        let file_download_uri: Uri = Uri::try_from(file_download_url.as_str())?;
+
+        let mut file_data = Vec::new();
+        Request::new(&file_download_uri)
+            .method(Method::GET)
+            .send(&mut file_data)?;
+        let base64_encoded = general_purpose::STANDARD.encode(file_data);
+
+        Ok(base64_encoded)
+    }
+}
