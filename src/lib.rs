@@ -13,6 +13,8 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
 pub fn run() {
+    store::del("image_file_ids");
+
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
@@ -87,16 +89,16 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             return;
         }
 
-        let image_file_id = match (msg.document(), msg.photo()) {
-            (Some(doc), None) => vec![doc.file.id.clone()],
-            (None, Some(photo)) => photo.iter().map(|p| p.file.id.clone()).collect(),
+        let image_file_id = match (msg.document(), msg.photo().map(|p| p.last())) {
+            (Some(doc), None) => doc.file.id.clone(),
+            (None, Some(Some(ps))) => ps.file.id.clone(),
             (_, _) => return,
         };
 
         let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
-        ids.extend(image_file_id);
+        ids.push(image_file_id);
         ids.dedup();
 
         _ = tele.send_message(chat_id, ids.join(", "));
