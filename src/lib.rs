@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, format};
 
 use base64::{engine::general_purpose, Engine};
 use cloud_vision_flows::text_detection;
@@ -111,6 +111,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
         ids.push(image_file_id);
         ids.dedup();
+
+        _ = tele.send_message(chat_id, format!(":: {} ::", ids.join(", ")));
 
         let ids = serde_json::to_value(ids).unwrap_or(json!([]));
         store::set("image_file_ids", ids, None);
