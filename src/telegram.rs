@@ -47,4 +47,13 @@ impl App {
 
         Ok(base64_encoded)
     }
+
+    pub fn get_image_id(&self) -> Option<String> {
+        let msg = &self.msg;
+        match (msg.document(), msg.photo().map(|p| p.last())) {
+            (Some(doc), None) => Some(doc.file.id.clone()),
+            (None, Some(Some(ps))) => Some(ps.file.id.clone()),
+            (_, _) => None,
+        }
+    }
 }

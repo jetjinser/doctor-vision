@@ -1,23 +1,23 @@
 // state machine
-// [waiting] -> [receiving] -> [answering]
-//                             [answering] -> [waiting]
+// [normal] -> [batch] -> [FAQ]
+//                        [FAQ] -> [normal]
 //
-// [waiting]:   if text:
-//                 if received `/start`, transform into [receiving]
+// [normal]:   if text:
+//                 if received `/start`, transform into [batch]
 //                 else response with help infomation.
 //              else:
 //                 no response.
-// [receiving]: if doc/photo(s), store them.
+// [batch]: if doc/photo(s), store them.
 //              if text:
 //                 if received `/end`,
 //                    response with lab report,
-//                    transform into [answering],
+//                    transform into [FAQ],
 //                 else response with current doc/photo(s) number and help infomation.
 //              else:
 //                 no response.
-// [answering]: if text:
+// [FAQ]: if text:
 //                 if received `/bye` or expired after 2mins,
-//                    transform into [waiting],
+//                    transform into [normal],
 //                 else chatgpt answering.
 //              if doc/photo(s), response with help infomation.
 //              else:
@@ -74,12 +74,12 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
     if let UpdateKind::Message(msg) = update.kind {
         let app = App::new(tele_token, openai_key, msg);
 
-        let state = app.state().unwrap_or(State::Waiting);
+        let state = app.state().unwrap_or(State::Normal);
 
         match state {
-            State::Waiting => app.waiting_stuff(),
-            State::Receiving => app.receiving_stuff(),
-            State::Answering => app.answering_stuff(),
+            State::Normal => app.normal_stuff(),
+            State::Batch => app.batch_stuff(),
+            State::FAQ => app.faq_stuff(),
         }
     }
 }

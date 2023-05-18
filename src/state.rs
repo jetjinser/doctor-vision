@@ -5,24 +5,24 @@ use crate::{App, HELP};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum State {
-    Waiting,
-    Receiving,
-    Answering,
+    Normal,
+    Batch,
+    FAQ,
 }
 
 impl App {
-    pub fn waiting(&self) {
-        let state = serde_json::to_value(State::Waiting).unwrap();
+    pub fn sw_normal(&self) {
+        let state = serde_json::to_value(State::Normal).unwrap();
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
     }
 
-    pub fn receiving(&self) {
-        let state = serde_json::to_value(State::Receiving).unwrap();
+    pub fn sw_batch(&self) {
+        let state = serde_json::to_value(State::Batch).unwrap();
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
     }
 
-    pub fn answering(&self) {
-        let state = serde_json::to_value(State::Answering).unwrap();
+    pub fn sw_faq(&self) {
+        let state = serde_json::to_value(State::FAQ).unwrap();
         store::set(
             format!("{}:state", self.msg.chat.id).as_str(),
             state,
@@ -40,28 +40,35 @@ impl App {
 }
 
 impl App {
-    pub fn waiting_stuff(&self) {
+    pub fn normal_stuff(&self) {
         if let Some(text) = self.msg.text() {
-            if text == "/start" {
-                self.receiving();
+            match text {
+                "/help" => {
+                    self.send_msg(HELP);
+                }
+                "/start" => {
+                    self.sw_batch();
 
-                // XXX: msg
-                self.send_msg("<another help message>");
-                return;
+                    // XXX: msg
+                    self.send_msg("<another help message>");
+                }
+                _ => {}
             }
+        }
 
-            self.send_msg(HELP);
+        if let Some(id) = self.get_image_id() {
+            self.doctor_in_normal(id);
         }
     }
 
-    pub fn receiving_stuff(&self) {
+    pub fn batch_stuff(&self) {
         let msg = &self.msg;
 
         if let Some(text) = msg.text() {
             match text {
                 "/end" => {
-                    self.answering();
-                    self.doctor_and_response();
+                    self.sw_faq();
+                    self.doctor_in_batch();
                 }
                 "/clear" => {
                     self.clear_image_ids();
@@ -88,12 +95,12 @@ impl App {
         self.reply_msg("received it");
     }
 
-    pub fn answering_stuff(&self) {
+    pub fn faq_stuff(&self) {
         let msg = &self.msg;
 
         if let Some(text) = msg.text() {
             if text == "/bye" {
-                self.waiting();
+                self.sw_normal();
                 // XXX: msg
                 self.send_msg("bye!");
                 return;
