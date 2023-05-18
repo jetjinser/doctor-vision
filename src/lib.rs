@@ -51,6 +51,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             match in_context {
                 Some(_) => {
                     if text == "/end" {
+                        store::set("in_context", json!(1), None);
+
                         let ids = store::del("image_file_ids").unwrap_or(json!([]));
 
                         for idv in ids.as_array().unwrap_or(&vec![]) {
@@ -88,7 +90,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                 None => {
                     let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.\nYou can start at any time by sending photo(s) and end it with `/end`";
                     _ = tele.send_message(chat_id, init_message);
-                    store::set("in_context", json!(1), None);
                 }
             }
 
@@ -101,7 +102,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             (_, _) => return,
         };
 
-        store::del("in_context");
         let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
