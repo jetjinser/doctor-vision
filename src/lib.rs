@@ -66,7 +66,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                                 };
                             }
                         }
-                        _ = tele.send_message(chat_id, "You can ask me anything you want to know. Type \"restart\" to terminate the current session.");
                     }
 
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
@@ -80,7 +79,7 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                 }
                 None => {
                     let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.\nYou can start at any time by sending photo(s) and end it with `/end`";
-                    _ = tele.send_message(chat_id, init_message.to_string());
+                    _ = tele.send_message(chat_id, init_message);
                     store::set("in_context", json!(1), None);
                 }
             }
@@ -98,6 +97,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
 
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
         ids.extend(image_file_id);
+
+        _ = tele.send_message(chat_id, ids.join(", "));
 
         let ids = serde_json::to_value(ids).unwrap_or(json!([]));
         store::set("image_file_ids", ids, None);
