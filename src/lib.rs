@@ -48,8 +48,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             match in_context {
                 Some(_) => {
                     if text == "/end" {
-                        store::del("in_context");
-
                         let ids = store::del("image_file_ids").unwrap_or(json!([]));
 
                         for idv in ids.as_array().unwrap_or(&vec![]) {
@@ -76,6 +74,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
                     if let Some(cp) = c {
                         if cp.restarted {
+                            store::del("in_context");
+
                             _ = tele.send_message(chat_id, format!("I am starting a new session. You can always type \"restart\" to terminate the current session.\n\n{}", cp.choice));
                         } else {
                             _ = tele.send_message(chat_id, cp.choice);
@@ -98,6 +98,7 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             (_, _) => return,
         };
 
+        store::del("in_context");
         let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
