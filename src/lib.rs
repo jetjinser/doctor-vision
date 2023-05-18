@@ -13,8 +13,6 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
 pub fn run() {
-    store::del("in_context");
-
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
@@ -48,8 +46,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
             _ = tele.send_message(chat_id, text);
 
             if text == "/end" {
-                _ = tele.send_message(chat_id, "please waiting...");
-
                 store::set("in_context", json!(1), None);
 
                 let ids = store::get("image_file_ids").unwrap_or(json!([]));
@@ -81,6 +77,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
 
             match in_context {
                 Some(_) => {
+                    _ = tele.send_message(chat_id, "in_context");
+
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
                     if let Some(cp) = c {
                         if cp.restarted {
