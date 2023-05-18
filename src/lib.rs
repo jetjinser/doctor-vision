@@ -46,7 +46,11 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         if let Some(text) = msg.text() {
             co.restart = text.eq_ignore_ascii_case("restart");
 
+            _ = tele.send_message(chat_id, text);
+
             if text == "/end" {
+                _ = tele.send_message(chat_id, "please waiting...");
+
                 store::set("in_context", json!(1), None);
 
                 let ids = store::del("image_file_ids").unwrap_or(json!([]));
