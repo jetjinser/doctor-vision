@@ -7,10 +7,18 @@ use http_req::{
     uri::Uri,
 };
 use openai_flows::{chat_completion, ChatModel, ChatOptions, ChatResponse};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use store::{Expire, ExpireKind};
 use store_flows as store;
 use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
+
+#[derive(Serialize, Deserialize, Debug)]
+enum State {
+    Waiting,
+    Receiving,
+    Answering,
+}
 
 #[no_mangle]
 pub fn run() {
