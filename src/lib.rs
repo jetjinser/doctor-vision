@@ -14,6 +14,31 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
 pub fn run() {
+    // state machine
+    // [waiting] -> [receiving] -> [answering]
+    //                             [answering] -> [waiting]
+    //
+    // [waiting]:   if text:
+    //                 if received `/start`, transform into [receiving]
+    //                 else response with help infomation.
+    //              else:
+    //                 no response.
+    // [receiving]: if doc/photo(s), store them.
+    //              if text:
+    //                 if received `/end`,
+    //                    response with lab report,
+    //                    transform into [answering],
+    //                 else response with current doc/photo(s) number and help infomation.
+    //              else:
+    //                 no response.
+    // [answering]: if text:
+    //                 if received `/bye` or expired after 2mins,
+    //                    transform into [waiting],
+    //                 else chatgpt answering.
+    //              if doc/photo(s), response with help infomation.
+    //              else:
+    //                 no response.
+
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
