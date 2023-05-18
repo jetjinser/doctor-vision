@@ -14,7 +14,6 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 #[no_mangle]
 pub fn run() {
     store::del("in_context");
-    store::del("image_file_ids");
 
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
@@ -53,7 +52,7 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
 
                 store::set("in_context", json!(1), None);
 
-                let ids = store::del("image_file_ids").unwrap_or(json!([]));
+                let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
                 for idv in ids.as_array().unwrap_or(&vec![]) {
                     _ = tele.send_message(chat_id, idv.as_str().unwrap_or("..."));
@@ -72,6 +71,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                         };
                     }
                 }
+
+                store::del("image_file_ids");
 
                 return;
             }
