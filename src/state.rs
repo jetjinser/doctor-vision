@@ -22,7 +22,7 @@ impl App {
     }
 
     pub fn answering(&self) {
-        let state = serde_json::to_value(State::Receiving).unwrap();
+        let state = serde_json::to_value(State::Answering).unwrap();
         store::set(
             format!("{}:state", self.msg.chat.id).as_str(),
             state,
@@ -44,6 +44,10 @@ impl App {
         if let Some(text) = self.msg.text() {
             if text == "/start" {
                 self.receiving();
+                // TODO:
+
+                self.send_msg("<another help message>");
+                return;
             }
 
             self.send_msg(HELP);
