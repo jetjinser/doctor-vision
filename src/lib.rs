@@ -80,6 +80,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                 "/bye" => {
                     store::del("in_context");
                     _ = tele.send_message(chat_id, "bye!");
+
+                    return;
                 }
                 _ => (),
             }
