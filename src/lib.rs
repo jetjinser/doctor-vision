@@ -8,6 +8,7 @@ use http_req::{
 };
 use openai_flows::{chat_completion, ChatModel, ChatOptions, ChatResponse};
 use serde_json::{json, Value};
+use store::{Expire, ExpireKind};
 use store_flows as store;
 use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
@@ -43,42 +44,50 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         if let Some(text) = msg.text() {
             co.restart = text.eq_ignore_ascii_case("restart");
 
-            _ = tele.send_message(chat_id, text);
+            match text {
+                "/end" => {
+                    store::set(
+                        "in_context",
+                        json!(1),
+                        Some(Expire {
+                            kind: ExpireKind::Ex,
+                            value: 120,
+                        }),
+                    );
 
-            if text == "/end" {
-                store::set("in_context", json!(1), None);
+                    let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
-                let ids = store::get("image_file_ids").unwrap_or(json!([]));
-
-                for idv in ids.as_array().unwrap_or(&vec![]) {
-                    _ = tele.send_message(chat_id, idv.as_str().unwrap_or("..."));
-
-                    if let Some(id) = idv.as_str() {
-                        match download_photo_data_base64(&telegram_token, id) {
-                            Ok(data) => {
-                                let c = doctor(data, &openai_key_name, chat_id, &co);
-                                if let Some(c) = c {
-                                    _ = tele.send_message(chat_id, c.choice);
+                    for idv in ids.as_array().unwrap_or(&vec![]) {
+                        if let Some(id) = idv.as_str() {
+                            match download_photo_data_base64(&telegram_token, id) {
+                                Ok(data) => {
+                                    let c = doctor(data, &openai_key_name, chat_id, &co);
+                                    if let Some(c) = c {
+                                        _ = tele.send_message(chat_id, c.choice);
+                                    }
                                 }
-                            }
-                            Err(_e) => {
-                                eprintln!("Error downloading photo");
-                            }
-                        };
+                                Err(_e) => {
+                                    eprintln!("Error downloading photo");
+                                }
+                            };
+                        }
                     }
+
+                    store::del("image_file_ids");
+
+                    return;
                 }
-
-                store::del("image_file_ids");
-
-                return;
+                "/bye" => {
+                    store::del("in_context");
+                    _ = tele.send_message(chat_id, "bye!");
+                }
+                _ => (),
             }
 
             let in_context = store::get("in_context");
 
             match in_context {
                 Some(_) => {
-                    _ = tele.send_message(chat_id, "in_context");
-
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
                     if let Some(cp) = c {
                         if cp.restarted {
@@ -110,8 +119,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
         ids.push(image_file_id);
         ids.dedup();
-
-        _ = tele.send_message(chat_id, format!(":: {} ::", ids.join(", ")));
 
         let ids = serde_json::to_value(ids).unwrap_or(json!([]));
         store::set("image_file_ids", ids, None);
