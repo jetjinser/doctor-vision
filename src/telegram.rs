@@ -19,7 +19,7 @@ impl App {
     where
         S: Into<String>,
     {
-        // need to update sdk
+        // TODO: need to update sdk
     }
 
     pub fn download_photo_data_base64(
@@ -29,7 +29,7 @@ impl App {
         let file = self.tele.get_file(file_id)?;
         let file_path = file.path;
 
-        // need to update sdk
+        // TODO: need to update sdk
         // let file_data = self.tele.download_file(file_path);
 
         // Download the file using the file path

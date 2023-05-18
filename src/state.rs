@@ -44,8 +44,8 @@ impl App {
         if let Some(text) = self.msg.text() {
             if text == "/start" {
                 self.receiving();
-                // TODO:
 
+                // XXX: msg
                 self.send_msg("<another help message>");
                 return;
             }
@@ -65,11 +65,14 @@ impl App {
                 }
                 "/clear" => {
                     self.clear_image_ids();
+
+                    // XXX: msg
                     self.send_msg("ok, cleared");
                 }
                 _ => {
                     let count = self.image_counts();
-                    self.send_msg(format!("received {count} photo(s)\n\n{HELP}"));
+                    // XXX: msg
+                    self.send_msg(format!("received {count} photo(s)"));
                 }
             }
         }
@@ -91,6 +94,8 @@ impl App {
         if let Some(text) = msg.text() {
             if text == "/bye" {
                 self.waiting();
+                // XXX: msg
+                self.send_msg("bye!");
                 return;
             }
 
