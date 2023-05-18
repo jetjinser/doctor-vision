@@ -7,7 +7,8 @@ use http_req::{
     uri::Uri,
 };
 use openai_flows::{chat_completion, ChatModel, ChatOptions, ChatResponse};
-use serde_json::Value;
+use serde_json::{json, Value};
+use store_flows as store;
 use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
@@ -29,11 +30,10 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                         1) [the name of the measurement] [status of the reading]
                         ...
                         one sentence summary about the subject's health status."#;
-        let co = ChatOptions {
+        let mut co = ChatOptions {
             // model: ChatModel::GPT4,
             model: ChatModel::GPT35Turbo,
             restart: false,
-            // restart: text.eq_ignore_ascii_case("restart"),
             system_prompt: Some(system),
             retry_times: 3,
         };
@@ -41,49 +41,66 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         let tele = Telegram::new(telegram_token.clone());
 
         if let Some(text) = msg.text() {
-            if text == "/start" {
-                let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
-                _ = tele.send_message(chat_id, init_message.to_string());
-                return;
-            } else {
-                let c = chat_completion(&openai_key_name, &chat_id.to_string(), &text, &co);
-                if let Some(text) = c {
-                    _ = tele.send_message(chat_id, text.choice);
+            co.restart = text.eq_ignore_ascii_case("restart");
+
+            let in_context = store::get("in_context");
+
+            match in_context {
+                Some(_) => {
+                    if text == "/end" {
+                        store::del("in_context");
+
+                        let ids = store::del("image_file_ids").unwrap_or(json!([]));
+                        for idv in ids.as_array().unwrap_or(&vec![]) {
+                            if let Some(id) = idv.as_str() {
+                                match download_photo_data_base64(&telegram_token, id) {
+                                    Ok(data) => {
+                                        let c = doctor(data, &openai_key_name, chat_id, &co);
+                                        if let Some(c) = c {
+                                            _ = tele.send_message(chat_id, c.choice);
+                                        }
+                                    }
+                                    Err(_e) => {
+                                        eprintln!("Error downloading photo");
+                                    }
+                                };
+                            }
+                        }
+                        _ = tele.send_message(chat_id, "You can ask me anything you want to know. Type \"restart\" to terminate the current session.");
+                    }
+
+                    let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
+                    if let Some(cp) = c {
+                        if cp.restarted {
+                            _ = tele.send_message(chat_id, format!("I am starting a new session. You can always type \"restart\" to terminate the current session.\n\n{}", cp.choice));
+                        } else {
+                            _ = tele.send_message(chat_id, cp.choice);
+                        }
+                    }
+                }
+                None => {
+                    let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.\nYou can start at any time by sending photo(s) and end it with `/end`";
+                    _ = tele.send_message(chat_id, init_message.to_string());
+                    store::set("in_context", json!(1), None);
                 }
             }
+
+            return;
         }
 
-        _ = tele.send_message(chat_id, "please waiting...");
-
-        let image_file_id = match (msg.document().is_some(), msg.photo().is_some()) {
-            (true, false) => msg.document().unwrap().file.id.clone(),
-            (false, true) => msg.photo().unwrap().last().unwrap().file.id.clone(),
+        let image_file_id = match (msg.document(), msg.photo()) {
+            (Some(doc), None) => vec![doc.file.id.clone()],
+            (None, Some(photo)) => photo.iter().map(|p| p.file.id.clone()).collect(),
             (_, _) => return,
         };
 
-        _ = tele.send_message(
-            chat_id,
-            format!(
-                "{}",
-                serde_json::to_string(&msg).unwrap_or("...".to_string())
-            ),
-        );
+        let ids = store::get("image_file_ids").unwrap_or(json!([]));
 
-        match download_photo_data_base64(&telegram_token, &image_file_id) {
-            Ok(data) => {
-                let c = doctor(data, openai_key_name, chat_id, co);
-                if let Some(c) = c {
-                    if c.restarted {
-                        // _ = tele.send_message(chat_id, "I am starting a new session. You can always type \"restart\" to terminate the current session.\n\n".to_string() + &c.choice);
-                    } else {
-                        _ = tele.send_message(chat_id, c.choice);
-                    }
-                }
-            }
-            Err(_e) => {
-                eprintln!("Error downloading photo");
-            }
-        };
+        let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
+        ids.extend(image_file_id);
+
+        let ids = serde_json::to_value(ids).unwrap_or(json!([]));
+        store::set("image_file_ids", ids, None);
     }
 }
 // }}}
@@ -97,7 +114,7 @@ fn download_photo_data_base64(
         "https://api.telegram.org/bot{}/getFile?file_id={}",
         token, file_id
     );
-    let file_uri: Uri = Uri::try_from(file_url.as_str()).unwrap();
+    let file_uri: Uri = Uri::try_from(file_url.as_str())?;
 
     let mut file_response = Vec::new();
     Request::new(&file_uri)
@@ -111,7 +128,7 @@ fn download_photo_data_base64(
 
     // Download the file using the file path
     let file_download_url = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
-    let file_download_uri: Uri = Uri::try_from(file_download_url.as_str()).unwrap();
+    let file_download_uri: Uri = Uri::try_from(file_download_url.as_str())?;
 
     let mut file_data = Vec::new();
     Request::new(&file_download_uri)
@@ -126,20 +143,12 @@ fn download_photo_data_base64(
 // {{{ doctor
 fn doctor(
     data: String,
-    openai_key_name: String,
+    openai_key_name: &str,
     chat_id: ChatId,
-    co: ChatOptions,
+    co: &ChatOptions,
 ) -> Option<ChatResponse> {
-    if let Ok(ocr_text) = text_detection(data) {
-        let text = if !ocr_text.is_empty() {
-            ocr_text
-        } else {
-            "".to_string()
-        };
-
-        chat_completion(&openai_key_name, &chat_id.to_string(), &text, &co)
-    } else {
-        None
-    }
+    text_detection(data)
+        .ok()
+        .and_then(|ocr_text| chat_completion(openai_key_name, &chat_id.to_string(), &ocr_text, co))
 }
 // }}}
