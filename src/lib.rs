@@ -97,6 +97,7 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
 
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
         ids.extend(image_file_id);
+        ids.dedup();
 
         _ = tele.send_message(chat_id, ids.join(", "));
 
