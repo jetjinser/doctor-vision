@@ -46,36 +46,36 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         if let Some(text) = msg.text() {
             co.restart = text.eq_ignore_ascii_case("restart");
 
+            if text == "/end" {
+                store::set("in_context", json!(1), None);
+
+                let ids = store::del("image_file_ids").unwrap_or(json!([]));
+
+                for idv in ids.as_array().unwrap_or(&vec![]) {
+                    _ = tele.send_message(chat_id, idv.as_str().unwrap_or("..."));
+
+                    if let Some(id) = idv.as_str() {
+                        match download_photo_data_base64(&telegram_token, id) {
+                            Ok(data) => {
+                                let c = doctor(data, &openai_key_name, chat_id, &co);
+                                if let Some(c) = c {
+                                    _ = tele.send_message(chat_id, c.choice);
+                                }
+                            }
+                            Err(_e) => {
+                                eprintln!("Error downloading photo");
+                            }
+                        };
+                    }
+                }
+
+                return;
+            }
+
             let in_context = store::get("in_context");
 
             match in_context {
                 Some(_) => {
-                    if text == "/end" {
-                        store::set("in_context", json!(1), None);
-
-                        let ids = store::del("image_file_ids").unwrap_or(json!([]));
-
-                        for idv in ids.as_array().unwrap_or(&vec![]) {
-                            _ = tele.send_message(chat_id, idv.as_str().unwrap_or("..."));
-
-                            if let Some(id) = idv.as_str() {
-                                match download_photo_data_base64(&telegram_token, id) {
-                                    Ok(data) => {
-                                        let c = doctor(data, &openai_key_name, chat_id, &co);
-                                        if let Some(c) = c {
-                                            _ = tele.send_message(chat_id, c.choice);
-                                        }
-                                    }
-                                    Err(_e) => {
-                                        eprintln!("Error downloading photo");
-                                    }
-                                };
-                            }
-                        }
-
-                        return;
-                    }
-
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
                     if let Some(cp) = c {
                         if cp.restarted {
