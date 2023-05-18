@@ -58,14 +58,20 @@ impl App {
         let msg = &self.msg;
 
         if let Some(text) = msg.text() {
-            if text == "/end" {
-                self.answering();
-                self.doctor_and_response();
-                return;
+            match text {
+                "/end" => {
+                    self.answering();
+                    self.doctor_and_response();
+                }
+                "/clear" => {
+                    self.clear_image_ids();
+                    self.send_msg("ok, cleared");
+                }
+                _ => {
+                    let count = self.image_counts();
+                    self.send_msg(format!("received {count} photo(s)\n\n{HELP}"));
+                }
             }
-
-            let count = self.image_counts();
-            self.send_msg(format!("received {count} photo(s)\n\n{HELP}"));
         }
 
         let image_file_id = match (msg.document(), msg.photo().map(|p| p.last())) {

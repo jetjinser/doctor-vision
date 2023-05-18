@@ -13,8 +13,8 @@ impl App {
         };
 
         chat_completion(
-            self.openai_key.as_str(),
-            self.msg.chat.id.to_string().as_str(),
+            &self.openai_key,
+            &self.msg.chat.id.to_string(),
             text,
             &chat_options,
         )

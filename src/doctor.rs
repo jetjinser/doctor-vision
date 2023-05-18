@@ -14,7 +14,7 @@ impl App {
     pub fn doctor_and_response(&self) {
         let key = format!("{}:image_file_ids", self.msg.chat.id);
 
-        if let Some(value) = store::get(key.as_str()) {
+        if let Some(value) = store::get(&key) {
             let ids = value.as_array().unwrap();
 
             for id in ids {
@@ -33,6 +33,6 @@ impl App {
                 }
             }
         }
-        store::del(key.as_str());
+        store::del(&key);
     }
 }
