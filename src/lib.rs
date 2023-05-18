@@ -13,6 +13,9 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
 pub fn run() {
+    store::del("in_context");
+    store::del("image_file_ids");
+
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
