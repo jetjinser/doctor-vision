@@ -13,8 +13,6 @@ use tg_flows::{listen_to_update, ChatId, Telegram, Update, UpdateKind};
 
 #[no_mangle]
 pub fn run() {
-    store::del("image_file_ids");
-
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
@@ -53,7 +51,10 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                         store::del("in_context");
 
                         let ids = store::del("image_file_ids").unwrap_or(json!([]));
+
                         for idv in ids.as_array().unwrap_or(&vec![]) {
+                            _ = tele.send_message(chat_id, idv.as_str().unwrap_or("..."));
+
                             if let Some(id) = idv.as_str() {
                                 match download_photo_data_base64(&telegram_token, id) {
                                     Ok(data) => {
@@ -68,6 +69,8 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
                                 };
                             }
                         }
+
+                        return;
                     }
 
                     let c = chat_completion(&openai_key_name, &chat_id.to_string(), text, &co);
@@ -100,8 +103,6 @@ fn handle(update: Update, telegram_token: String, openai_key_name: String) {
         let mut ids = serde_json::from_value(ids).unwrap_or(vec![]);
         ids.push(image_file_id);
         ids.dedup();
-
-        _ = tele.send_message(chat_id, ids.join(", "));
 
         let ids = serde_json::to_value(ids).unwrap_or(json!([]));
         store::set("image_file_ids", ids, None);
