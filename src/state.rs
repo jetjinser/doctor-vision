@@ -28,7 +28,7 @@ impl App {
             state,
             Some(Expire {
                 kind: ExpireKind::Ex,
-                value: 120, // 2 mins
+                value: 300, // 5 mins
             }),
         );
     }
@@ -59,6 +59,7 @@ impl App {
         }
 
         if let Some(id) = self.get_image_id() {
+            self.send_msg("please wait a minite.");
             self.doctor_once(id);
             self.sw_faq();
         }
