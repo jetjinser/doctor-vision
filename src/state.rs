@@ -7,7 +7,7 @@ use crate::{App, HELP};
 pub enum State {
     Normal,
     Batch,
-    FAQ,
+    QA,
 }
 
 impl App {
@@ -22,7 +22,7 @@ impl App {
     }
 
     pub fn sw_faq(&self) {
-        let state = serde_json::to_value(State::FAQ).unwrap();
+        let state = serde_json::to_value(State::QA).unwrap();
         store::set(
             format!("{}:state", self.msg.chat.id).as_str(),
             state,
@@ -50,9 +50,11 @@ impl App {
                     self.sw_batch();
 
                     // XXX: msg
-                    self.send_msg("<another help message>");
+                    self.send_msg("started batch");
                 }
-                _ => {}
+                _ => {
+                    self.send_msg(HELP);
+                }
             }
         }
 
@@ -94,19 +96,17 @@ impl App {
     }
 
     pub fn qa_stuff(&self) {
-        let msg = &self.msg;
-
-        if let Some(text) = msg.text() {
+        if let Some(text) = self.msg.text() {
             match text {
                 "/bye" => {
-                    self.sw_normal();
                     // XXX: msg
                     self.send_msg("bye!");
+                    self.sw_normal();
                 }
                 "/start" => {
-                    self.sw_batch();
                     // XXX: msg
                     self.send_msg("start batch");
+                    self.sw_batch();
                 }
                 _ => {
                     if let Some(cp) = self.chat(text) {

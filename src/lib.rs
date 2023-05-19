@@ -34,7 +34,7 @@ mod state;
 mod store;
 mod telegram;
 
-const HELP: &str = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.\nYou can start at any time by sending photo(s) and end it with `/end`";
+const HELP: &str = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
 
 const SYSTEM: &str = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
                         1) [the name of the measurement] [status of the reading]
@@ -79,7 +79,7 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
         match state {
             State::Normal => app.normal_stuff(),
             State::Batch => app.batch_stuff(),
-            State::FAQ => app.qa_stuff(),
+            State::QA => app.qa_stuff(),
         }
     }
 }
