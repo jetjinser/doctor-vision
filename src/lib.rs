@@ -1,6 +1,6 @@
 // state machine
-// [normal] -> [batch] -> [FAQ]
-//                        [FAQ] -> [normal]
+// [normal] -> [batch] -> [QA]
+//                        [QA] -> [normal]
 //
 // [normal]:   if text:
 //                 if received `/start`, transform into [batch]
@@ -11,11 +11,11 @@
 //              if text:
 //                 if received `/end`,
 //                    response with lab report,
-//                    transform into [FAQ],
+//                    transform into [QA],
 //                 else response with current doc/photo(s) number and help infomation.
 //              else:
 //                 no response.
-// [FAQ]: if text:
+// [QA]: if text:
 //                 if received `/bye` or expired after 2mins,
 //                    transform into [normal],
 //                 else chatgpt answering.
@@ -79,7 +79,7 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
         match state {
             State::Normal => app.normal_stuff(),
             State::Batch => app.batch_stuff(),
-            State::FAQ => app.faq_stuff(),
+            State::FAQ => app.qa_stuff(),
         }
     }
 }

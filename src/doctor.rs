@@ -11,7 +11,7 @@ impl App {
             .and_then(|ocr_text| self.chat(&ocr_text))
     }
 
-    pub fn doctor_in_normal(&self, id: String) {
+    pub fn doctor_once(&self, id: String) {
         match self.download_photo_data_base64(id.to_string()) {
             Ok(data) => {
                 let cp = self.doctor(data);
@@ -26,7 +26,7 @@ impl App {
         }
     }
 
-    pub fn doctor_in_batch(&self) {
+    pub fn doctor_batch(&self) {
         let key = format!("{}:image_file_ids", self.msg.chat.id);
 
         if let Some(value) = store::get(&key) {

@@ -57,7 +57,8 @@ impl App {
         }
 
         if let Some(id) = self.get_image_id() {
-            self.doctor_in_normal(id);
+            self.doctor_once(id);
+            self.sw_faq();
         }
     }
 
@@ -68,7 +69,7 @@ impl App {
             match text {
                 "/end" => {
                     self.sw_faq();
-                    self.doctor_in_batch();
+                    self.doctor_batch();
                 }
                 "/clear" => {
                     self.clear_image_ids();
@@ -84,33 +85,39 @@ impl App {
             }
         }
 
-        let image_file_id = match (msg.document(), msg.photo().map(|p| p.last())) {
-            (Some(doc), None) => doc.file.id.clone(),
-            (None, Some(Some(ps))) => ps.file.id.clone(),
-            (_, _) => return,
-        };
-
-        self.store_image_id(image_file_id);
-        // TODO: reply msg
-        self.reply_msg("received it");
+        let image_file_id = self.get_image_id();
+        if let Some(id) = image_file_id {
+            self.store_image_id(id);
+            // TODO: reply msg
+            self.reply_msg("received it");
+        }
     }
 
-    pub fn faq_stuff(&self) {
+    pub fn qa_stuff(&self) {
         let msg = &self.msg;
 
         if let Some(text) = msg.text() {
-            if text == "/bye" {
-                self.sw_normal();
-                // XXX: msg
-                self.send_msg("bye!");
-                return;
+            match text {
+                "/bye" => {
+                    self.sw_normal();
+                    // XXX: msg
+                    self.send_msg("bye!");
+                }
+                "/start" => {
+                    self.sw_batch();
+                    // XXX: msg
+                    self.send_msg("start batch");
+                }
+                _ => {
+                    if let Some(cp) = self.chat(text) {
+                        self.send_msg(cp.choice);
+                    }
+                }
             }
+        }
 
-            if let Some(cp) = self.chat(text) {
-                self.send_msg(cp.choice);
-            }
-        } else {
-            self.send_msg(HELP);
+        if let Some(id) = self.get_image_id() {
+            self.doctor_once(id);
         }
     }
 }
