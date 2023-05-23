@@ -1,28 +1,3 @@
-// state machine
-// [normal] -> [batch] -> [QA]
-//                        [QA] -> [normal]
-//
-// [normal]:   if text:
-//                 if received `/start`, transform into [batch]
-//                 else response with help infomation.
-//              else:
-//                 no response.
-// [batch]: if doc/photo(s), store them.
-//              if text:
-//                 if received `/end`,
-//                    response with lab report,
-//                    transform into [QA],
-//                 else response with current doc/photo(s) number and help infomation.
-//              else:
-//                 no response.
-// [QA]: if text:
-//                 if received `/bye` or expired after 2mins,
-//                    transform into [normal],
-//                 else chatgpt answering.
-//              if doc/photo(s), response with help infomation.
-//              else:
-//                 no response.
-
 use std::env;
 
 use state::State;
@@ -31,7 +6,6 @@ use tg_flows::{listen_to_update, Message, Telegram, Update, UpdateKind};
 mod chat;
 mod doctor;
 mod state;
-mod store;
 mod telegram;
 
 const HELP: &str = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
@@ -78,8 +52,7 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
 
         match state {
             State::Normal => app.normal_stuff(),
-            State::Batch => app.batch_stuff(),
-            State::QA => app.qa_stuff(),
+            State::Chat => app.chat_stuff(),
         }
     }
 }

@@ -15,13 +15,6 @@ impl App {
         _ = self.tele.send_message(self.msg.chat.id, text);
     }
 
-    pub fn reply_msg<S>(&self, _text: S)
-    where
-        S: Into<String>,
-    {
-        // TODO: need to update sdk
-    }
-
     pub fn download_photo_data_base64(
         &self,
         file_id: String,

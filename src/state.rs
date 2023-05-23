@@ -6,8 +6,7 @@ use crate::{App, HELP};
 #[derive(Serialize, Deserialize, Debug)]
 pub enum State {
     Normal,
-    Batch,
-    QA,
+    Chat,
 }
 
 impl App {
@@ -16,13 +15,8 @@ impl App {
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
     }
 
-    pub fn sw_batch(&self) {
-        let state = serde_json::to_value(State::Batch).unwrap();
-        store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
-    }
-
-    pub fn sw_faq(&self) {
-        let state = serde_json::to_value(State::QA).unwrap();
+    pub fn sw_chat(&self) {
+        let state = serde_json::to_value(State::Chat).unwrap();
         store::set(
             format!("{}:state", self.msg.chat.id).as_str(),
             state,
@@ -41,84 +35,27 @@ impl App {
 
 impl App {
     pub fn normal_stuff(&self) {
-        if let Some(text) = self.msg.text() {
-            match text {
-                "/help" => {
-                    self.send_msg(HELP);
-                }
-                "/start" => {
-                    self.sw_batch();
-
-                    // XXX: msg
-                    self.send_msg("started batch");
-                }
-                _ => {
-                    self.send_msg(HELP);
-                }
-            }
-        }
-
         if let Some(id) = self.get_image_id() {
             self.send_msg("please wait a minite.");
             self.doctor_once(id);
-            self.sw_faq();
+            self.sw_chat();
+        } else if self.msg.text().is_some() {
+            self.send_msg(HELP);
         }
     }
 
-    pub fn batch_stuff(&self) {
-        let msg = &self.msg;
+    pub fn chat_stuff(&self) {
+        if self.get_image_id().is_some() {
+            self.sw_normal();
+            self.normal_stuff();
+        } else if let Some(text) = self.msg.text() {
+            let msg = if let Some(cp) = self.chat(text) {
+                cp.choice
+            } else {
+                String::from("Something went wrong...")
+            };
 
-        if let Some(text) = msg.text() {
-            match text {
-                "/end" => {
-                    self.sw_faq();
-                    self.doctor_batch();
-                }
-                "/clear" => {
-                    self.clear_image_ids();
-
-                    // XXX: msg
-                    self.send_msg("ok, cleared");
-                }
-                _ => {
-                    let count = self.image_counts();
-                    // XXX: msg
-                    self.send_msg(format!("received {count} photo(s)"));
-                }
-            }
-        }
-
-        let image_file_id = self.get_image_id();
-        if let Some(id) = image_file_id {
-            self.store_image_id(id);
-            // TODO: reply msg
-            self.reply_msg("received it");
-        }
-    }
-
-    pub fn qa_stuff(&self) {
-        if let Some(text) = self.msg.text() {
-            match text {
-                "/bye" => {
-                    // XXX: msg
-                    self.send_msg("bye!");
-                    self.sw_normal();
-                }
-                "/start" => {
-                    // XXX: msg
-                    self.send_msg("start batch");
-                    self.sw_batch();
-                }
-                _ => {
-                    if let Some(cp) = self.chat(text) {
-                        self.send_msg(cp.choice);
-                    }
-                }
-            }
-        }
-
-        if let Some(id) = self.get_image_id() {
-            self.doctor_once(id);
+            self.send_msg(msg);
         }
     }
 }
