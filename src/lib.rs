@@ -17,10 +17,11 @@ fn handler(update: Update, tele_token: String) {
     if let UpdateKind::Message(msg) = update.kind {
         let tele = Telegram::new(tele_token);
 
-        let id = get_image_id(&msg).unwrap_or("...".to_string());
+        let image_id = get_image_id(&msg).unwrap_or("...".to_string());
+        let media_group_id = msg.media_group_id().unwrap_or("...");
         let text = msg.text().unwrap_or("...");
 
-        let re_msg = format!("text: {text}\nimage: {id}");
+        let re_msg = format!(" text: {text}\nimage: {image_id}\nmedia: {media_group_id}");
 
         _ = tele.send_message(msg.chat.id, re_msg);
     }
