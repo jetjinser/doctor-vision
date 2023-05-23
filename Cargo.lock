@@ -724,9 +724,9 @@ checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 
 [[package]]
 name = "openai-flows"
-version = "0.4.5"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dde7d721155169d9154f994951bfcbde7b02a3362f606b812016eb60aeb4d620"
+checksum = "ed915883d6408a93cad6454ece95c0bb4f387414c6abbcff87f97af23e307cc1"
 dependencies = [
  "http_req_wasi",
  "lazy_static",
