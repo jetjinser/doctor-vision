@@ -41,6 +41,10 @@ impl App {
         Ok(base64_encoded)
     }
 
+    pub fn is_group_media(&self) -> bool {
+        self.msg.media_group_id().is_some()
+    }
+
     pub fn get_image_id(&self) -> Option<String> {
         let msg = &self.msg;
         match (msg.document(), msg.photo().map(|p| p.last())) {

@@ -6,6 +6,7 @@ use tg_flows::{listen_to_update, Message, Telegram, Update, UpdateKind};
 mod chat;
 mod doctor;
 mod state;
+mod store;
 mod telegram;
 
 const HELP: &str = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";

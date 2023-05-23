@@ -6,6 +6,7 @@ use crate::{App, HELP};
 #[derive(Serialize, Deserialize, Debug)]
 pub enum State {
     Normal,
+    Pending,
     Chat,
 }
 
@@ -15,16 +16,14 @@ impl App {
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
     }
 
+    pub fn sw_pending(&self) {
+        let state = serde_json::to_value(State::Pending).unwrap();
+        store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
+    }
+
     pub fn sw_chat(&self) {
         let state = serde_json::to_value(State::Chat).unwrap();
-        store::set(
-            format!("{}:state", self.msg.chat.id).as_str(),
-            state,
-            Some(Expire {
-                kind: ExpireKind::Ex,
-                value: 300, // 5 mins
-            }),
-        );
+        store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
     }
 
     pub fn state(&self) -> Option<State> {
@@ -36,12 +35,32 @@ impl App {
 impl App {
     pub fn normal_stuff(&self) {
         if let Some(id) = self.get_image_id() {
-            self.send_msg("please wait a minite.");
-            self.doctor_once(id);
-            self.sw_chat();
+            if self.is_group_media() {
+                self.sw_pending();
+            } else {
+                self.send_msg("please wait a minite.");
+                self.doctor_once(id);
+                self.sw_chat();
+            }
         } else if self.msg.text().is_some() {
             self.send_msg(HELP);
         }
+    }
+
+    pub fn pending_stuff(&self) {
+        if let Some(text) = self.msg.text() {
+            if text == "/finish" {
+                // TODO:
+                // self.doctor_batch();
+
+                self.sw_chat();
+            } else {
+                self.send_msg("use `/finish` commmand to start doctor");
+            }
+        }
+
+        let id = self.get_image_id();
+        self.store_image_id(id);
     }
 
     pub fn chat_stuff(&self) {
