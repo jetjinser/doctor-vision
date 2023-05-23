@@ -49,14 +49,17 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
     if let UpdateKind::Message(msg) = update.kind {
         let app = App::new(tele_token, openai_key, msg.clone());
 
-        let state = match msg.text() {
+        match msg.text() {
             Some(text) if text == "/init" => {
                 app.send_msg("initialized");
-                State::Normal
-            }
-            _ => app.state().unwrap_or(State::Normal),
-        };
+                app.sw_normal();
 
+                return;
+            }
+            _ => (),
+        }
+
+        let state = app.state().unwrap_or(State::Normal);
         match state {
             State::Normal => app.normal_stuff(),
             State::Pending => app.pending_stuff(),
