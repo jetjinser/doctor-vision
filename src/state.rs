@@ -36,8 +36,9 @@ impl App {
     pub fn normal_stuff(&self) {
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
-                self.send_msg("received multi-media, switch to pending state");
                 self.sw_pending();
+                self.pending_stuff();
+                self.send_msg("received multi-media, switch to pending state");
             } else {
                 self.send_msg("please wait a minute.");
                 self.doctor_once(id);
