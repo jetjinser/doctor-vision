@@ -1,3 +1,5 @@
+use std::format;
+
 use serde::{Deserialize, Serialize};
 use store_flows as store;
 
@@ -36,9 +38,10 @@ impl App {
     pub fn normal_stuff(&self) {
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
+                self.send_msg("received multi-media, switch to pending state");
+
                 self.sw_pending();
                 self.pending_stuff();
-                self.send_msg("received multi-media, switch to pending state");
             } else {
                 self.send_msg("please wait a minute.");
                 self.doctor_once(id);
@@ -51,18 +54,26 @@ impl App {
 
     pub fn pending_stuff(&self) {
         if let Some(text) = self.msg.text() {
-            if text == "/finish" {
-                self.send_msg("please wait a minute.");
-                self.doctor_batch();
+            match text {
+                "/finish" => {
+                    self.send_msg("please wait a minute.");
+                    self.doctor_batch();
 
-                self.sw_chat();
-            } else {
-                self.send_msg("use `/finish` commmand to start doctor");
+                    self.sw_chat();
+                }
+                "/list" => self.send_msg(format!("received {} photo(s)", self.count_images())),
+                "/cancel" => {
+                    self.clear_image_ids();
+                    self.send_msg("cleared received photo(s).");
+                    self.sw_normal();
+                }
+                _ => self.send_msg("use `/finish` commmand to start doctor"),
             }
         }
 
         if let Some(id) = self.get_image_id() {
-            self.store_image_id(id);
+            let count = self.store_image_id(id);
+            self.send_msg(format!("received {} photo(s)", count));
         }
     }
 
