@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use store_flows::{self as store, Expire, ExpireKind};
+use store_flows as store;
 
 use crate::{App, HELP};
 
@@ -36,9 +36,10 @@ impl App {
     pub fn normal_stuff(&self) {
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
+                self.send_msg("received multi-media, switch to pending state");
                 self.sw_pending();
             } else {
-                self.send_msg("please wait a minite.");
+                self.send_msg("please wait a minute.");
                 self.doctor_once(id);
                 self.sw_chat();
             }
@@ -50,8 +51,8 @@ impl App {
     pub fn pending_stuff(&self) {
         if let Some(text) = self.msg.text() {
             if text == "/finish" {
-                // TODO:
-                // self.doctor_batch();
+                self.send_msg("please wait a minute.");
+                self.doctor_batch();
 
                 self.sw_chat();
             } else {
@@ -59,8 +60,9 @@ impl App {
             }
         }
 
-        let id = self.get_image_id();
-        self.store_image_id(id);
+        if let Some(id) = self.get_image_id() {
+            self.store_image_id(id);
+        }
     }
 
     pub fn chat_stuff(&self) {

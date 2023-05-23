@@ -24,4 +24,31 @@ impl App {
             }
         }
     }
+
+    pub fn doctor_batch(&self) {
+        if let Some(value) = self.get_image_ids() {
+            let ids = value.as_array().unwrap();
+
+            let texts = ids
+                .iter()
+                .filter_map(|id| {
+                    let id = id.as_str().unwrap();
+                    match self.download_photo_data_base64(id.to_string()) {
+                        Ok(data) => Some(data),
+                        Err(_) => {
+                            eprintln!("Error downloading photo: {}", id);
+                            None
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n---\n");
+
+            if let Some(cp) = self.doctor(texts) {
+                self.send_msg(cp.choice);
+            }
+        }
+
+        self.clear_image_ids();
+    }
 }

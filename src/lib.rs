@@ -53,6 +53,7 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
 
         match state {
             State::Normal => app.normal_stuff(),
+            State::Pending => app.pending_stuff(),
             State::Chat => app.chat_stuff(),
         }
     }

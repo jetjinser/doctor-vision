@@ -16,17 +16,15 @@ impl App {
         store::set(&key, ids, None);
     }
 
-    pub fn image_counts(&self) -> usize {
-        let key = format!("{}:image_file_ids", self.msg.chat.id);
-
-        let ids = store::get(&key).unwrap_or(json!([]));
-
-        ids.as_array().unwrap().len()
-    }
-
     pub fn clear_image_ids(&self) {
         let key = format!("{}:image_file_ids", self.msg.chat.id);
 
         store::del(&key);
+    }
+
+    pub fn get_image_ids(&self) -> Option<serde_json::Value> {
+        let key = format!("{}:image_file_ids", self.msg.chat.id);
+
+        store::get(&key)
     }
 }
