@@ -46,6 +46,8 @@ impl App {
 
             if let Some(cp) = self.doctor(texts) {
                 self.send_msg(cp.choice);
+            } else {
+                self.send_msg("Something went wrong...");
             }
         }
 
