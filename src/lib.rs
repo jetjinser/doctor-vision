@@ -36,16 +36,18 @@ impl App {
 }
 
 #[no_mangle]
-pub fn run() {
+#[tokio::main(flavor = "current_thread")]
+pub async fn run() {
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
     listen_to_update(telegram_token.clone(), |update| {
         handler(update, telegram_token, openai_key_name)
-    });
+    })
+    .await;
 }
 
-fn handler(update: Update, tele_token: String, openai_key: String) {
+async fn handler(update: Update, tele_token: String, openai_key: String) {
     if let UpdateKind::Message(msg) = update.kind {
         let app = App::new(tele_token, openai_key, msg.clone());
 
@@ -61,9 +63,9 @@ fn handler(update: Update, tele_token: String, openai_key: String) {
 
         let state = app.state().unwrap_or(State::Normal);
         match state {
-            State::Normal => app.normal_stuff(),
-            State::Pending => app.pending_stuff(),
-            State::Chat => app.chat_stuff(),
+            State::Normal => app.normal_stuff().await,
+            State::Pending => app.pending_stuff().await,
+            State::Chat => app.chat_stuff().await,
         }
     }
 }

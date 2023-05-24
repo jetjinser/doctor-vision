@@ -1,19 +1,22 @@
 use cloud_vision_flows::text_detection;
-use openai_flows::ChatResponse;
+use openai_flows::chat::ChatResponse;
 
 use crate::App;
 
 impl App {
-    pub fn doctor(&self, data: String) -> Option<ChatResponse> {
-        text_detection(data)
-            .ok()
-            .and_then(|ocr_text| self.chat(&ocr_text))
+    pub async fn doctor(&self, data: String) -> Option<ChatResponse> {
+        let text = text_detection(data);
+        if let Ok(t) = text {
+            self.chat(&t).await
+        } else {
+            None
+        }
     }
 
-    pub fn doctor_once(&self, id: String) {
+    pub async fn doctor_once(&self, id: String) {
         match self.download_photo_data_base64(id.to_string()) {
             Ok(data) => {
-                let cp = self.doctor(data);
+                let cp = self.doctor(data).await;
 
                 if let Some(c) = cp {
                     self.send_msg(c.choice);
@@ -25,7 +28,7 @@ impl App {
         }
     }
 
-    pub fn doctor_batch(&self) {
+    pub async fn doctor_batch(&self) {
         if let Some(value) = self.get_image_ids() {
             let ids = value.as_array().unwrap();
 
@@ -44,7 +47,7 @@ impl App {
                 .collect::<Vec<_>>()
                 .join("\n---\n");
 
-            if let Some(cp) = self.doctor(texts) {
+            if let Some(cp) = self.doctor(texts).await {
                 self.send_msg(cp.choice);
             } else {
                 self.send_msg("Something went wrong...");

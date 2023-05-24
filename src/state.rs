@@ -35,14 +35,14 @@ impl App {
 }
 
 impl App {
-    pub fn normal_stuff(&self) {
+    pub async fn normal_stuff(&self) {
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
                 self.sw_pending();
-                self.pending_stuff();
+                self.pending_stuff().await;
             } else {
                 self.send_msg("please wait a minute.");
-                self.doctor_once(id);
+                self.doctor_once(id).await;
                 self.sw_chat();
             }
         } else if self.msg.text().is_some() {
@@ -50,12 +50,12 @@ impl App {
         }
     }
 
-    pub fn pending_stuff(&self) {
+    pub async fn pending_stuff(&self) {
         if let Some(text) = self.msg.text() {
             match text {
                 "/finish" => {
                     self.send_msg("please wait a minute.");
-                    self.doctor_batch();
+                    self.doctor_batch().await;
 
                     self.sw_chat();
                 }
@@ -75,14 +75,14 @@ impl App {
         }
     }
 
-    pub fn chat_stuff(&self) {
+    pub async fn chat_stuff(&self) {
         if self.get_image_id().is_some() {
             self.sw_normal();
-            self.normal_stuff();
+            self.normal_stuff().await;
         } else if let Some(text) = self.msg.text() {
             self.send_msg("please wait a minute.");
 
-            let msg = if let Some(cp) = self.chat(text) {
+            let msg = if let Some(cp) = self.chat(text).await {
                 cp.choice
             } else {
                 String::from("Something went wrong...")
