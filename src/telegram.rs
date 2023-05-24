@@ -3,16 +3,16 @@ use http_req::{
     request::{Method, Request},
     uri::Uri,
 };
+use tg_flows::Message;
 
 use crate::App;
 
 impl App {
-    pub fn send_msg<S>(&self, text: S)
+    pub fn send_msg<S>(&self, text: S) -> Option<Message>
     where
         S: Into<String>,
     {
-        // ignored
-        _ = self.tele.send_message(self.msg.chat.id, text);
+        self.tele.send_message(self.msg.chat.id, text).ok()
     }
 
     pub fn download_photo_data_base64(

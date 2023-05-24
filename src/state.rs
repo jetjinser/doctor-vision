@@ -41,8 +41,8 @@ impl App {
                 self.sw_pending();
                 self.pending_stuff().await;
             } else {
-                self.send_msg("please wait a minute.");
-                self.doctor_once(id).await;
+                let ph_msg = self.send_msg("please wait a minute.").unwrap();
+                self.doctor_once(id, ph_msg).await;
                 self.sw_chat();
             }
         } else if self.msg.text().is_some() {
@@ -54,18 +54,22 @@ impl App {
         if let Some(text) = self.msg.text() {
             match text {
                 "/finish" => {
-                    self.send_msg("please wait a minute.");
-                    self.doctor_batch().await;
+                    let ph_msg = self.send_msg("please wait a minute.").unwrap();
+                    self.doctor_batch(ph_msg).await;
 
                     self.sw_chat();
                 }
-                "/list" => self.send_msg(format!("received {} photo(s)", self.count_images())),
+                "/list" => {
+                    self.send_msg(format!("received {} photo(s)", self.count_images()));
+                }
                 "/cancel" => {
                     self.clear_image_ids();
                     self.send_msg("cleared received photo(s).");
                     self.sw_normal();
                 }
-                _ => self.send_msg("use `/finish` commmand to start"),
+                _ => {
+                    self.send_msg("use `/finish` commmand to start");
+                }
             }
         }
 
@@ -80,7 +84,7 @@ impl App {
             self.sw_normal();
             self.normal_stuff().await;
         } else if let Some(text) = self.msg.text() {
-            self.send_msg("please wait a minute.");
+            let ph_msg = self.send_msg("please wait a minute.").unwrap();
 
             let msg = if let Some(cp) = self.chat(text).await {
                 cp.choice
@@ -88,7 +92,7 @@ impl App {
                 String::from("Something went wrong...")
             };
 
-            self.send_msg(msg);
+            _ = self.tele.edit_message_text(ph_msg.chat.id, ph_msg.id, msg);
         }
     }
 }
