@@ -80,6 +80,8 @@ impl App {
             self.sw_normal();
             self.normal_stuff();
         } else if let Some(text) = self.msg.text() {
+            self.send_msg("please wait a minute.");
+
             let msg = if let Some(cp) = self.chat(text) {
                 cp.choice
             } else {
