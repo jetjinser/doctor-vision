@@ -30,12 +30,4 @@ impl App {
 
         store::get(&key)
     }
-
-    pub fn count_images(&self) -> usize {
-        let key = format!("{}:image_file_ids", self.msg.chat.id);
-
-        let ids = store::get(&key).unwrap_or(json!([]));
-
-        ids.as_array().unwrap().len()
-    }
 }

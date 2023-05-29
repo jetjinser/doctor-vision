@@ -59,16 +59,8 @@ impl App {
 
                     self.sw_chat();
                 }
-                "/list" => {
-                    self.send_msg(format!("received {} photo(s)", self.count_images()));
-                }
-                "/cancel" => {
-                    self.clear_image_ids();
-                    self.send_msg("cleared received photo(s).");
-                    self.sw_normal();
-                }
                 _ => {
-                    self.send_msg("use `/finish` commmand to start");
+                    self.send_msg("You are uploading multiple photos. Please type /finish once you have uploaded all photos. Thank you");
                 }
             }
         }
