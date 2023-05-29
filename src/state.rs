@@ -39,6 +39,7 @@ impl App {
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
                 self.sw_pending();
+                self.send_msg("You are uploading multiple photos. Please type /finish once you have uploaded all photos. Thank you");
                 self.pending_stuff().await;
             } else {
                 let ph_msg = self.send_msg("please wait a minute.").unwrap();
