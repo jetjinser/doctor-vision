@@ -9,7 +9,7 @@ mod state;
 mod store;
 mod telegram;
 
-const HELP: &str = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
+const HELP: &str = "Howdy! I am here to help explain doctor notes, forms, prescriptions or lab reports to you. Snap a photo of your document and send it to me! If the document has multiple pages, please send multiple photos as a single message.";
 
 const SYSTEM: &str = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
                         1) [the name of the measurement] [status of the reading]

@@ -67,8 +67,7 @@ impl App {
         }
 
         if let Some(id) = self.get_image_id() {
-            let count = self.store_image_id(id);
-            self.send_msg(format!("received {} photo(s)", count));
+            self.store_image_id(id);
         }
     }
 
