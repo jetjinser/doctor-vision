@@ -24,3 +24,6 @@ serde_json = "1.0.96"
 
 tokio_wasi = { version = "1.25.1", features = ["rt", "macros"] }
 url = "2.3.1"
+flowsnet-platform-sdk = "0.1.4"
+dotenv = "0.15.0"
+log = "0.4.18"

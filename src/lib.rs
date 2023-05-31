@@ -1,5 +1,7 @@
 use std::env;
 
+use dotenv::dotenv;
+use flowsnet_platform_sdk::logger;
 use state::State;
 use tg_flows::{listen_to_update, Message, Telegram, Update, UpdateKind};
 
@@ -38,6 +40,10 @@ impl App {
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
 pub async fn run() {
+    dotenv().ok();
+    logger::init();
+    log::debug!("Running doctor-vision/main");
+
     let telegram_token = env::var("telegram_token").unwrap();
     let openai_key_name = env::var("openai_key_name").unwrap_or("jaykchen".to_string());
 
@@ -53,6 +59,8 @@ async fn handler(update: Update, tele_token: String, openai_key: String) {
 
         match msg.text() {
             Some(text) if text == "/init" => {
+                log::debug!("initialized");
+
                 app.send_msg("initialized");
                 app.sw_normal();
 

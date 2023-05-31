@@ -10,6 +10,7 @@ impl App {
         if let Ok(t) = text {
             self.chat(&t).await
         } else {
+            log::warn!("Failed to get ocr_text via cloud_vision_flows");
             None
         }
     }
@@ -27,8 +28,8 @@ impl App {
                         .edit_message_text(msg.chat.id, msg.id, "Something went wrong...");
                 }
             }
-            Err(_) => {
-                eprintln!("Error downloading photo: {}", id);
+            Err(e) => {
+                log::warn!("Failed to download file: {}, reason: {}", id, e);
             }
         }
     }
@@ -43,8 +44,8 @@ impl App {
                     let id = id.as_str().unwrap();
                     match self.download_photo_data_base64(id.to_string()) {
                         Ok(data) => Some(data),
-                        Err(_) => {
-                            eprintln!("Error downloading photo: {}", id);
+                        Err(e) => {
+                            log::warn!("Failed to download file: {}, reason: {}", id, e);
                             None
                         }
                     }

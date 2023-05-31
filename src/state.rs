@@ -16,16 +16,19 @@ impl App {
     pub fn sw_normal(&self) {
         let state = serde_json::to_value(State::Normal).unwrap();
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
+        log::debug!("switched to normal");
     }
 
     pub fn sw_pending(&self) {
         let state = serde_json::to_value(State::Pending).unwrap();
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
+        log::debug!("switched to pending");
     }
 
     pub fn sw_chat(&self) {
         let state = serde_json::to_value(State::Chat).unwrap();
         store::set(format!("{}:state", self.msg.chat.id).as_str(), state, None);
+        log::debug!("switched to chat");
     }
 
     pub fn state(&self) -> Option<State> {
@@ -36,6 +39,7 @@ impl App {
 
 impl App {
     pub async fn normal_stuff(&self) {
+        log::debug!("Doing normal stuff");
         if let Some(id) = self.get_image_id() {
             if self.is_group_media() {
                 self.sw_pending();
@@ -52,6 +56,7 @@ impl App {
     }
 
     pub async fn pending_stuff(&self) {
+        log::debug!("Doing pending stuff");
         if let Some(text) = self.msg.text() {
             match text {
                 "/finish" => {
@@ -72,6 +77,7 @@ impl App {
     }
 
     pub async fn chat_stuff(&self) {
+        log::debug!("Doing chat stuff");
         if self.get_image_id().is_some() {
             self.sw_normal();
             self.normal_stuff().await;
@@ -81,6 +87,7 @@ impl App {
             let msg = if let Some(cp) = self.chat(text).await {
                 cp.choice
             } else {
+                log::warn!("failed get chatgpt choise in chat");
                 String::from("Something went wrong...")
             };
 

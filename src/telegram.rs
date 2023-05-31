@@ -12,6 +12,11 @@ impl App {
     where
         S: Into<String>,
     {
+        let text: String = text.into();
+        log::debug!(
+            "Sending message: {}...",
+            text.chars().take(15).collect::<String>()
+        );
         self.tele.send_message(self.msg.chat.id, text).ok()
     }
 
@@ -21,6 +26,8 @@ impl App {
     ) -> Result<String, Box<dyn std::error::Error>> {
         let file = self.tele.get_file(file_id)?;
         let file_path = file.path;
+
+        log::debug!("Downloading file from {}", file_path);
 
         // TODO: need to update sdk
         // let file_data = self.tele.download_file(file_path);
