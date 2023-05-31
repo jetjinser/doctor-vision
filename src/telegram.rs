@@ -3,9 +3,9 @@ use http_req::{
     request::{Method, Request},
     uri::Uri,
 };
-use tg_flows::Message;
+use tg_flows::{ChatId, Message, MessageId};
 
-use crate::App;
+use crate::{first_x_string, App};
 
 impl App {
     pub fn send_msg<S>(&self, text: S) -> Option<Message>
@@ -13,11 +13,17 @@ impl App {
         S: Into<String>,
     {
         let text: String = text.into();
-        log::debug!(
-            "Sending message: {}...",
-            text.chars().take(15).collect::<String>()
-        );
+        log::debug!("Sending message: {}...", first_x_string(15, &text));
         self.tele.send_message(self.msg.chat.id, text).ok()
+    }
+
+    pub fn edit_msg<S>(&self, chat_id: ChatId, message_id: MessageId, text: S) -> Option<Message>
+    where
+        S: Into<String>,
+    {
+        let text: String = text.into();
+        log::debug!("Editing message: {}...", first_x_string(15, &text));
+        self.tele.edit_message_text(chat_id, message_id, text).ok()
     }
 
     pub fn download_photo_data_base64(
@@ -43,6 +49,9 @@ impl App {
         Request::new(&file_download_uri)
             .method(Method::GET)
             .send(&mut file_data)?;
+
+        log::debug!("File {} downloaded", file_path);
+
         let base64_encoded = general_purpose::STANDARD.encode(file_data);
 
         Ok(base64_encoded)

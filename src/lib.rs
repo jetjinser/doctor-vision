@@ -59,21 +59,31 @@ async fn handler(update: Update, tele_token: String, openai_key: String) {
 
         match msg.text() {
             Some(text) if text == "/init" => {
-                log::debug!("initialized");
+                log::debug!("initializing");
 
                 app.send_msg("initialized");
                 app.sw_normal();
 
+                log::debug!("initialized");
                 return;
             }
             _ => (),
         }
 
-        let state = app.state().unwrap_or(State::Normal);
+        let state = app.state().unwrap_or_else(|| {
+            log::debug!("No state is stored, fallback to Normal mode");
+            State::Normal
+        });
         match state {
             State::Normal => app.normal_stuff().await,
             State::Pending => app.pending_stuff().await,
             State::Chat => app.chat_stuff().await,
         }
+    } else {
+        log::debug!("Not Message update kind, ignored");
     }
+}
+
+fn first_x_string<S: AsRef<str>>(x: usize, str: S) -> String {
+    str.as_ref().chars().take(x).collect()
 }

@@ -3,7 +3,7 @@ use std::format;
 use serde::{Deserialize, Serialize};
 use store_flows as store;
 
-use crate::{App, HELP};
+use crate::{first_x_string, App, HELP};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum State {
@@ -40,24 +40,38 @@ impl App {
 impl App {
     pub async fn normal_stuff(&self) {
         log::debug!("Doing normal stuff");
+
         if let Some(id) = self.get_image_id() {
+            log::debug!("Got image id: {}", id);
+
             if self.is_group_media() {
+                log::debug!("IS group media");
+
                 self.sw_pending();
                 self.send_msg("You are uploading multiple photos. Please type /finish once you have uploaded all photos. Thank you");
                 self.pending_stuff().await;
             } else {
+                log::debug!("NOT group media");
+
                 let ph_msg = self.send_msg("please wait a minute.").unwrap();
                 self.doctor_once(id, ph_msg).await;
                 self.sw_chat();
             }
-        } else if self.msg.text().is_some() {
+        } else if let Some(text) = self.msg.text() {
+            log::debug!("Got text: {}", first_x_string(15, text));
+
             self.send_msg(HELP);
         }
+
+        log::debug!("Normal stuff done");
     }
 
     pub async fn pending_stuff(&self) {
         log::debug!("Doing pending stuff");
+
         if let Some(text) = self.msg.text() {
+            log::debug!("Got text: {}", first_x_string(15, text));
+
             match text {
                 "/finish" => {
                     let ph_msg = self.send_msg("please wait a minute.").unwrap();
@@ -72,16 +86,25 @@ impl App {
         }
 
         if let Some(id) = self.get_image_id() {
+            log::debug!("Got image id: {}", id);
+
             self.store_image_id(id);
         }
+
+        log::debug!("Pending stuff done");
     }
 
     pub async fn chat_stuff(&self) {
         log::debug!("Doing chat stuff");
-        if self.get_image_id().is_some() {
+
+        if let Some(id) = self.get_image_id() {
+            log::debug!("Got image id: {}", id);
+
             self.sw_normal();
             self.normal_stuff().await;
         } else if let Some(text) = self.msg.text() {
+            log::debug!("Got text: {}", first_x_string(15, text));
+
             let ph_msg = self.send_msg("please wait a minute.").unwrap();
 
             let msg = if let Some(cp) = self.chat(text).await {
@@ -91,7 +114,9 @@ impl App {
                 String::from("Something went wrong...")
             };
 
-            _ = self.tele.edit_message_text(ph_msg.chat.id, ph_msg.id, msg);
+            self.edit_msg(ph_msg.chat.id, ph_msg.id, msg);
         }
+
+        log::debug!("Chat stuff done");
     }
 }
