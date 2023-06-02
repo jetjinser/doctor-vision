@@ -8,13 +8,15 @@ impl App {
     pub async fn doctor(&self, data: String) -> Option<ChatResponse> {
         log::debug!("Doctoring");
 
-        let text = text_detection(data);
-        if let Ok(t) = text {
-            log::debug!("Got ocr_text via cloud vision: {}", first_x_string(15, &t));
-            self.chat(&t).await
-        } else {
-            log::warn!("Failed to get ocr_text via cloud vision");
-            None
+        match text_detection(data) {
+            Ok(t) => {
+                log::debug!("Got ocr_text via cloud vision: {}", first_x_string(15, &t));
+                self.chat(&t).await
+            }
+            Err(e) => {
+                log::warn!("Failed to get ocr_text via cloud vision: {}", e);
+                None
+            }
         }
     }
 
