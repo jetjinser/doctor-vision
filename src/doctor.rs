@@ -49,6 +49,7 @@ impl App {
                 .iter()
                 .filter_map(|id| {
                     let id = id.as_str().unwrap();
+                    log::debug!("Will download and encode image id={}", id);
                     match self.download_photo_data_base64(id.to_string()) {
                         Ok(data) => Some(data),
                         Err(e) => {
@@ -60,6 +61,8 @@ impl App {
                 .collect::<Vec<_>>()
                 .join("\n---\n");
 
+            log::debug!("Combined base64 for images:");
+            log::debug!(texts);
             if let Some(cp) = self.doctor(texts).await {
                 self.edit_msg(msg.chat.id, msg.id, cp.choice);
             } else {
