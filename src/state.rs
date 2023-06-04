@@ -48,13 +48,17 @@ impl App {
                 log::debug!("IS group media");
 
                 self.sw_pending();
+
+                // TODO: get last update
+
                 self.send_msg("You are uploading multiple photos. Please type /finish once you have uploaded all photos. Thank you");
+
                 self.pending_stuff().await;
             } else {
                 log::debug!("NOT group media");
 
                 let ph_msg = self.send_msg("please wait a minute.").unwrap();
-                self.doctor_once(id, ph_msg).await;
+                self.doctor_once(id, ph_msg.chat.id, ph_msg.id).await;
                 self.sw_chat();
             }
         } else if let Some(text) = self.msg.text() {
