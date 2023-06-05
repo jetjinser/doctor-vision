@@ -78,8 +78,7 @@ impl App {
 
             match text {
                 "/finish" => {
-                    let ph_msg = self.send_msg("please wait a minute.").unwrap();
-                    self.doctor_batch(ph_msg).await;
+                    self.doctor_batch().await;
 
                     self.sw_chat();
                 }

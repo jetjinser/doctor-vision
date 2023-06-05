@@ -1,6 +1,6 @@
 use cloud_vision_flows::text_detection;
 use openai_flows::chat::ChatResponse;
-use tg_flows::{ChatId, Message, MessageId};
+use tg_flows::{ChatId, MessageId};
 
 use crate::{first_x_string, App};
 
@@ -31,22 +31,24 @@ impl App {
 
         let cp = self.doctor(id).await;
         if let Some(c) = cp {
-            self.edit_msg(chat_id, msg_id, &c.choice);
+            self.edit_msg(chat_id, msg_id, c.choice);
         } else {
             self.edit_msg(chat_id, msg_id, "Something went wrong...");
         }
     }
 
-    pub async fn doctor_batch(&self, msg: Message) {
+    pub async fn doctor_batch(&self) {
         log::debug!("Doctoring batch");
 
         if let Some(value) = self.get_image_ids() {
             let ids = value.as_array().unwrap();
 
-            let chat_id = msg.chat.id;
-            let msg_id = msg.id;
-
             for id in ids {
+                let msg = self.send_msg("please wait a minute.").unwrap();
+
+                let chat_id = msg.chat.id;
+                let msg_id = msg.id;
+
                 let id = id.as_str().unwrap();
                 self.doctor_once(id.to_string(), chat_id, msg_id).await;
             }
