@@ -2,6 +2,7 @@ use std::env;
 
 use dotenv::dotenv;
 use flowsnet_platform_sdk::logger;
+use lazy_static::lazy_static;
 use state::State;
 use tg_flows::{listen_to_update, Message, Telegram, Update, UpdateKind};
 
@@ -11,12 +12,17 @@ mod state;
 mod store;
 mod telegram;
 
-const HELP: &str = "Howdy! I am here to help explain doctor notes, forms, prescriptions or lab reports to you. Snap a photo of your document and send it to me! If the document has multiple pages, please send multiple photos as a single message.";
+const DEFAULT_HELP: &str = "Howdy! I am here to help explain doctor notes, forms, prescriptions or lab reports to you. Snap a photo of your document and send it to me! If the document has multiple pages, please send multiple photos as a single message.";
 
-const SYSTEM: &str = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
+const DEFAULT_SYSTEM: &str = r#"You are a medical lab technican, you'll read a lab report and tell the user the most important findings of the report in short bullets, please use the following template: The major findings are:
                         1) [the name of the measurement] [status of the reading]
                         ...
                         one sentence summary about the subject's health status."#;
+
+lazy_static! {
+    static ref HELP: String = std::env::var("help").unwrap_or(DEFAULT_HELP.to_string());
+    static ref SYSTEM: String = std::env::var("start_prompt").unwrap_or(DEFAULT_SYSTEM.to_string());
+}
 
 struct App {
     tele: Telegram,

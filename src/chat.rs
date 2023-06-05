@@ -11,7 +11,7 @@ impl App {
             // model: ChatModel::GPT4,
             model: ChatModel::GPT35Turbo,
             restart: false,
-            system_prompt: Some(SYSTEM),
+            system_prompt: Some(&*SYSTEM),
         };
 
         let mut of = OpenAIFlows::new();

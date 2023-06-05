@@ -64,7 +64,7 @@ impl App {
         } else if let Some(text) = self.msg.text() {
             log::debug!("Got text: {}", first_x_string(15, text));
 
-            self.send_msg(HELP);
+            self.send_msg(&*HELP);
         }
 
         log::debug!("Normal stuff done");

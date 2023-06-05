@@ -143,6 +143,7 @@ dependencies = [
  "dotenv",
  "flowsnet-platform-sdk",
  "http_req_wasi",
+ "lazy_static",
  "log",
  "once_cell",
  "openai-flows",
