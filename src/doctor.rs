@@ -5,13 +5,13 @@ use tg_flows::{ChatId, MessageId};
 use crate::{first_x_string, App};
 
 impl App {
-    pub async fn doctor(&self, data: String) -> Option<ChatResponse> {
-        log::debug!("Doctoring");
+    pub fn ocr(&self, data: String) -> Option<String> {
+        log::debug!("doing ocr");
 
         match text_detection(data) {
             Ok(t) => {
                 log::debug!("Got ocr_text via cloud vision: {}", first_x_string(15, &t));
-                self.chat(&t).await
+                Some(t)
             }
             Err(e) => {
                 log::warn!("Failed to get ocr_text via cloud vision: {}", e);
@@ -20,16 +20,23 @@ impl App {
         }
     }
 
+    pub async fn doctor(&self, text: String) -> Option<ChatResponse> {
+        log::debug!("Doctoring");
+        self.chat(&text).await
+    }
+
     pub async fn doctor_once(&self, id: String, chat_id: ChatId, msg_id: MessageId) {
         log::debug!("Doctoring once");
 
         match self.download_photo_data_base64(id.clone()) {
             Ok(data) => {
-                let cp = self.doctor(data).await;
-                if let Some(c) = cp {
-                    self.edit_msg(chat_id, msg_id, c.choice);
-                } else {
-                    self.edit_msg(chat_id, msg_id, "Something went wrong...");
+                if let Some(text) = self.ocr(data) {
+                    let cp = self.doctor(text).await;
+                    if let Some(c) = cp {
+                        self.edit_msg(chat_id, msg_id, c.choice);
+                    } else {
+                        self.edit_msg(chat_id, msg_id, "Something went wrong...");
+                    }
                 }
             }
             Err(e) => {
@@ -51,6 +58,7 @@ impl App {
                 .filter_map(|id| {
                     self.download_photo_data_base64(id.as_str().unwrap().to_string())
                         .ok()
+                        .and_then(|data| self.ocr(data))
                 })
                 .collect();
 
